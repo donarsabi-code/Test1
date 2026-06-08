@@ -109,6 +109,12 @@ class TestDeepMerge:
     def test_empty_base(self):
         assert deep_merge({}, {"a": 1}) == {"a": 1}
 
+    def test_no_mutation_of_base(self):
+        base = {"a": {"x": 1}}
+        result = deep_merge(base, {"b": 2})
+        result["a"]["x"] = 99
+        assert base["a"]["x"] == 1
+
 
 class TestPluck:
     def test_basic(self):

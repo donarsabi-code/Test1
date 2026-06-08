@@ -28,7 +28,8 @@ def count_consonants(s: str) -> int:
 def truncate(s: str, max_length: int, suffix: str = "...") -> str:
     if len(s) <= max_length:
         return s
-    return s[: max_length - len(suffix)] + suffix
+    truncated_length = max(0, max_length - len(suffix))
+    return s[:truncated_length] + suffix
 
 
 def slugify(s: str) -> str:
@@ -58,7 +59,8 @@ def wrap_text(text: str, width: int) -> str:
     current_length = 0
     for word in words:
         if current_length + len(word) + len(current_line) > width:
-            lines.append(" ".join(current_line))
+            if current_line:
+                lines.append(" ".join(current_line))
             current_line = [word]
             current_length = len(word)
         else:

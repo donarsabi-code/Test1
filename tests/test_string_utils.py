@@ -87,6 +87,14 @@ class TestTruncate:
     def test_custom_suffix(self):
         assert truncate("hello world", 7, "~") == "hello ~"
 
+    def test_max_length_less_than_suffix(self):
+        result = truncate("hello world", 2)
+        assert len(result) <= len("...")
+        assert result == "..."
+
+    def test_max_length_zero(self):
+        assert truncate("hello", 0) == "..."
+
 
 class TestSlugify:
     def test_basic(self):
@@ -141,3 +149,8 @@ class TestWrapText:
 
     def test_empty(self):
         assert wrap_text("", 10) == ""
+
+    def test_long_first_word(self):
+        result = wrap_text("superlongword short", 5)
+        assert result == "superlongword\nshort"
+        assert not result.startswith("\n")
