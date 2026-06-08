@@ -1,0 +1,23 @@
+{
+  "name": "movix-livetv",
+  "version": "1.0.0",
+  "description": "Movix Live TV — web app (frontend + CORS proxy backend) that aggregates Live TV/sports channels and extracts playable HLS sources.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "lint": "eslint server",
+    "postinstall": "node scripts/copy-vendor.mjs"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "hls.js": "^1.5.13"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.9.0"
+  }
+}
