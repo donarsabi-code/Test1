@@ -2,6 +2,11 @@
 // Runs server-side on Node 18+ (global fetch, crypto.subtle, btoa, TextEncoder).
 /* eslint-disable */
 
+  // SeekStreaming AES key/IV (defined just above the extractors block in the
+  // original userscript; ported here so extractSeekStreaming works server-side).
+  const SEEKSTREAMING_AES_KEY_RAW = "kiemtienmua911ca";
+  const SEEKSTREAMING_AES_IV_RAW = "1234567890oiuytr";
+
   class TTLCache {
     constructor(maxSize = 500, ttlMs = 7200000) {
       this._cache = new Map();

@@ -39,6 +39,24 @@ function matchesRule(rule, url, resourceType = "xmlhttprequest") {
 // the proxy can re-apply the right Referer/Origin/User-Agent per upstream host.
 const dynamicRules = [];
 
+// Cap on per-host rules to prevent unbounded growth on a long-running server.
+// Base rules (id < 100, e.g. the global CORS rule) are never evicted; the
+// oldest per-host rules are dropped once the cap is exceeded.
+const MAX_DYNAMIC_RULES = 2000;
+
+function evictOldDynamicRules() {
+  let overflow = dynamicRules.length - MAX_DYNAMIC_RULES;
+  if (overflow <= 0) return;
+  for (let i = 0; i < dynamicRules.length && overflow > 0; ) {
+    if (dynamicRules[i].id >= 100) {
+      dynamicRules.splice(i, 1);
+      overflow--;
+    } else {
+      i++;
+    }
+  }
+}
+
 /**
  * Resolve the request headers that should be injected when fetching `url`
  * through the proxy, based on all registered modifyHeaders rules.
@@ -82,6 +100,7 @@ const chrome = {
         if (idx >= 0) dynamicRules[idx] = rule;
         else dynamicRules.push(rule);
       }
+      evictOldDynamicRules();
     },
   },
   storage: {

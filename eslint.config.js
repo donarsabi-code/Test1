@@ -3,6 +3,10 @@ import js from "@eslint/js";
 export default [
   js.configs.recommended,
   {
+    // Ported verbatim from the userscript; not subject to our lint rules.
+    ignores: ["server/extractors.js", "server/providers.js"],
+  },
+  {
     files: ["server/**/*.js", "scripts/**/*.mjs"],
     languageOptions: {
       ecmaVersion: 2023,
