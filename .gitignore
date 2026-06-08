@@ -4,3 +4,11 @@ npm-debug.log*
 .DS_Store
 *.log
 .env
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
