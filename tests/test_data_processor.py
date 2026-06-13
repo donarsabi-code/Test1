@@ -115,6 +115,12 @@ class TestDeepMerge:
         result["a"]["x"] = 99
         assert base["a"]["x"] == 1
 
+    def test_no_mutation_of_override(self):
+        override = {"a": {"nested": 1}}
+        result = deep_merge({}, override)
+        result["a"]["nested"] = 999
+        assert override["a"]["nested"] == 1
+
 
 class TestPluck:
     def test_basic(self):
@@ -150,8 +156,13 @@ class TestSortByKey:
 
     def test_missing_key_uses_default(self):
         items = [{"n": "b"}, {"n": "a"}, {"x": "c"}]
-        result = sort_by_key(items, "n")
+        result = sort_by_key(items, "n", default="")
         assert result[0] == {"x": "c"}  # "" sorts first
+
+    def test_missing_key_with_int_values(self):
+        items = [{"n": 3}, {"n": 1}, {"other": "x"}]
+        result = sort_by_key(items, "n", default=0)
+        assert [i.get("n", 0) for i in result] == [0, 1, 3]
 
 
 class TestPaginate:

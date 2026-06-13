@@ -44,7 +44,7 @@ def deep_merge(base: dict, override: dict) -> dict:
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = deep_merge(result[key], value)
         else:
-            result[key] = value
+            result[key] = copy.deepcopy(value)
     return result
 
 
@@ -56,8 +56,10 @@ def invert_dict(d: dict) -> dict:
     return {v: k for k, v in d.items()}
 
 
-def sort_by_key(items: list[dict], key: str, reverse: bool = False) -> list[dict]:
-    return sorted(items, key=lambda x: x.get(key, ""), reverse=reverse)
+def sort_by_key(
+    items: list[dict], key: str, reverse: bool = False, default: Any = None
+) -> list[dict]:
+    return sorted(items, key=lambda x: x.get(key, default), reverse=reverse)
 
 
 def paginate(items: list, page: int, per_page: int) -> dict:
