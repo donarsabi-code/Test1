@@ -1,0 +1,502 @@
+   401→  const handleSubmit = async (e: FormEvent) => {
+   402→    e.preventDefault()
+   403→    setError('')
+   404→    if (!form.filiere) { setError('Veuillez sélectionner une filière'); return }
+   405→    setLoading(true)
+   406→    try {
+   407→      const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+   408→      const data = await res.json()
+   409→      if (!res.ok) { setError(data.error || 'Erreur'); return }
+   410→      setRegistration(data.email, data.studentId, data.verificationCode)
+   411→      setPage('verify')
+   412→    } catch { setError('Erreur de connexion au serveur') }
+   413→    finally { setLoading(false) }
+   414→  }
+   415→
+   416→  return (
+   417→    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
+   418→      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl">
+   419→        <div className="text-center mb-8">
+   420→          <img src="/estam/IMG_1627.webp" alt="ESTAM" className="w-16 h-16 rounded-full mx-auto border-2 border-amber-500/50 object-cover mb-4" />
+   421→          <h1 className="text-2xl font-bold text-white">Inscription Étudiant</h1>
+   422→          <p className="text-zinc-400 text-sm mt-1">Créez votre compte ESTAM</p>
+   423→        </div>
+   424→        <Card className="bg-zinc-900 border-zinc-800">
+   425→          <CardContent className="pt-6">
+   426→            <form onSubmit={handleSubmit} className="space-y-4">
+   427→              <div className="grid sm:grid-cols-2 gap-4">
+   428→                <div><Label className="text-zinc-300">Prénom *</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.firstName} onChange={e => update('firstName', e.target.value)} required /></div>
+   429→                <div><Label className="text-zinc-300">Nom *</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.lastName} onChange={e => update('lastName', e.target.value)} required /></div>
+   430→              </div>
+   431→              <div className="grid sm:grid-cols-2 gap-4">
+   432→                <div><Label className="text-zinc-300">Email *</Label><Input type="email" className="mt-1 bg-zinc-800 border-zinc-700 text-white" placeholder="exemple@gmail.com" value={form.email} onChange={e => update('email', e.target.value)} required /></div>
+   433→                <div><Label className="text-zinc-300">Mot de passe *</Label><Input type="password" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.password} onChange={e => update('password', e.target.value)} required /></div>
+   434→              </div>
+   435→              <div className="grid sm:grid-cols-3 gap-4">
+   436→                <div><Label className="text-zinc-300">Date de naissance</Label><Input type="date" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.dateOfBirth} onChange={e => update('dateOfBirth', e.target.value)} /></div>
+   437→                <div><Label className="text-zinc-300">Genre</Label>
+   438→                  <Select value={form.genre} onValueChange={v => update('genre', v)}>
+   439→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+   440→                    <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
+   441→                  </Select>
+   442→                </div>
+   443→                <div><Label className="text-zinc-300">Téléphone</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.phone} onChange={e => update('phone', e.target.value)} placeholder="+242 06 XXX XX XX" /></div>
+   444→              </div>
+   445→              <div className="grid sm:grid-cols-2 gap-4">
+   446→                <div><Label className="text-zinc-300">Ville *</Label>
+   447→                  <Select value={form.city} onValueChange={v => update('city', v)}>
+   448→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+   449→                    <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Brazzaville">Brazzaville</SelectItem><SelectItem value="Pointe-Noire">Pointe-Noire</SelectItem></SelectContent>
+   450→                  </Select>
+   451→                </div>
+   452→                <div><Label className="text-zinc-300">Nationalité</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.nationality} onChange={e => update('nationality', e.target.value)} /></div>
+   453→              </div>
+   454→              <div><Label className="text-zinc-300">Adresse</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.address} onChange={e => update('address', e.target.value)} /></div>
+   455→              <Separator className="bg-zinc-700" />
+   456→              <div className="grid sm:grid-cols-3 gap-4">
+   457→                <div><Label className="text-zinc-300">Domaine *</Label>
+   458→                  <Select value={form.filiereCategory} onValueChange={v => update('filiereCategory', v)}>
+   459→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+   460→                    <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Gestion">Gestion</SelectItem><SelectItem value="Technologie">Technologie</SelectItem></SelectContent>
+   461→                  </Select>
+   462→                </div>
+   463→                <div><Label className="text-zinc-300">Filière *</Label>
+   464→                  <Select value={form.filiere} onValueChange={v => update('filiere', v)}>
+   465→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+   466→                    <SelectContent className="bg-zinc-800 border-zinc-700">
+   467→                      {FILIERES[form.filiereCategory]?.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+   468→                    </SelectContent>
+   469→                  </Select>
+   470→                </div>
+   471→                <div><Label className="text-zinc-300">Niveau *</Label>
+   472→                  <Select value={form.niveau} onValueChange={v => update('niveau', v)}>
+   473→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+   474→                    <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="L1">Licence 1</SelectItem><SelectItem value="L2">Licence 2</SelectItem><SelectItem value="L3">Licence 3</SelectItem></SelectContent>
+   475→                  </Select>
+   476→                </div>
+   477→              </div>
+   478→              {error && <p className="text-red-400 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+   479→              <Button type="submit" disabled={loading} className="w-full bg-amber-500 text-black hover:bg-amber-600">
+   480→                {loading ? 'Inscription en cours...' : "S'inscrire"}
+   481→              </Button>
+   482→            </form>
+   483→            <div className="text-center mt-4 space-y-2">
+   484→              <p className="text-zinc-400 text-sm">Déjà inscrit ? <button onClick={() => setPage('mini-login')} className="text-amber-500 hover:underline">Se connecter</button></p>
+   485→              <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour à l&apos;accueil</button>
+   486→            </div>
+   487→          </CardContent>
+   488→        </Card>
+   489→      </motion.div>
+   490→    </div>
+   491→  )
+   492→}
+   493→
+   494→// ─── Verify Page ───
+   495→function VerifyPage() {
+   496→  const { registeredEmail, registeredStudentId, registeredCode, setPage } = useAppStore()
+   497→  const [code, setCode] = useState('')
+   498→  const [error, setError] = useState('')
+   499→  const [loading, setLoading] = useState(false)
+   500→
+   501→  const handleSubmit = async (e: FormEvent) => {
+   502→    e.preventDefault()
+   503→    setError('')
+   504→    setLoading(true)
+   505→    try {
+   506→      const res = await fetch('/api/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentId: registeredStudentId, code }) })
+   507→      const data = await res.json()
+   508→      if (!res.ok) { setError(data.error || 'Erreur'); return }
+   509→      setPage('login')
+   510→    } catch { setError('Erreur de connexion') }
+   511→    finally { setLoading(false) }
+   512→  }
+   513→
+   514→  return (
+   515→    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+   516→      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
+   517→        <Card className="bg-zinc-900 border-zinc-800">
+   518→          <CardHeader className="text-center">
+   519→            <CheckCircle2 className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+   520→            <CardTitle className="text-white text-xl">Inscription réussie !</CardTitle>
+   521→            <CardDescription className="text-zinc-400">Vérifiez votre boîte email</CardDescription>
+   522→          </CardHeader>
+   523→          <CardContent className="space-y-4">
+   524→            <div className="bg-zinc-800 rounded-lg p-4 space-y-2">
+   525→              <p className="text-zinc-400 text-xs">Votre identifiant étudiant</p>
+   526→              <p className="text-amber-500 font-bold text-lg font-mono">{registeredStudentId}</p>
+   527→              <p className="text-zinc-400 text-xs">Email : {registeredEmail}</p>
+   528→            </div>
+   529→            <p className="text-zinc-300 text-sm text-center">Un code de vérification a été envoyé à votre adresse email. Saisissez-le ci-dessous :</p>
+   530→            <form onSubmit={handleSubmit} className="space-y-4">
+   531→              <Input className="bg-zinc-800 border-zinc-700 text-white text-center text-2xl tracking-[0.5em] font-mono" maxLength={6} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} placeholder="000000" required />
+   532→              {error && <p className="text-red-400 text-sm text-center flex items-center justify-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+   533→              <Button type="submit" disabled={loading} className="w-full bg-amber-500 text-black hover:bg-amber-600">{loading ? 'Vérification...' : 'Vérifier mon compte'}</Button>
+   534→            </form>
+   535→            <p className="text-zinc-500 text-xs text-center">(Code de test : {registeredCode})</p>
+   536→          </CardContent>
+   537→        </Card>
+   538→      </motion.div>
+   539→    </div>
+   540→  )
+   541→}
+   542→
+   543→// ─── Login Page ───
+   544→function LoginPage() {
+   545→  const { setPage, setStudent, setGrades, setPayments, setNotifications } = useAppStore()
+   546→  const [email, setEmail] = useState('')
+   547→  const [password, setPassword] = useState('')
+   548→  const [showPw, setShowPw] = useState(false)
+   549→  const [loading, setLoading] = useState(false)
+   550→  const [error, setError] = useState('')
+   551→
+   552→  const handleSubmit = async (e: FormEvent) => {
+   553→    e.preventDefault()
+   554→    setError('')
+   555→    setLoading(true)
+   556→    try {
+   557→      const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+   558→      const data = await res.json()
+   559→      if (!res.ok) {
+   560→        if (data.needsVerification) setError('Compte non vérifié. Veuillez vérifier votre email.')
+   561→        else setError(data.error || 'Identifiants incorrects')
+   562→        return
+   563→      }
+   564→      setStudent(data.student)
+   565→      setNotifications(data.notifications || [])
+   566→      const [gRes, pRes] = await Promise.all([
+   567→        fetch(`/api/grades?studentDbId=${data.student.id}`),
+   568→        fetch(`/api/payments?studentDbId=${data.student.id}`),
+   569→      ])
+   570→      const gData = await gRes.json()
+   571→      const pData = await pRes.json()
+   572→      setGrades(gData.grades || [])
+   573→      setPayments(pData.payments || [])
+   574→      setPage('loading')
+   575→    } catch { setError('Erreur de connexion au serveur') }
+   576→    finally { setLoading(false) }
+   577→  }
+   578→
+   579→  return (
+   580→    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+   581→      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+   582→        <div className="text-center mb-8">
+   583→          <img src="/estam/IMG_1627.webp" alt="ESTAM" className="w-16 h-16 rounded-full mx-auto border-2 border-amber-500/50 object-cover mb-4" />
+   584→          <h1 className="text-2xl font-bold text-white">Connexion Étudiant</h1>
+   585→          <p className="text-zinc-400 text-sm mt-1">Accédez à votre espace ESTAM</p>
+   586→        </div>
+   587→        <Card className="bg-zinc-900 border-zinc-800">
+   588→          <CardContent className="pt-6">
+   589→            <form onSubmit={handleSubmit} className="space-y-4">
+   590→              <div>
+   591→                <Label className="text-zinc-300">Email</Label>
+   592→                <div className="relative mt-1">
+   593→                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+   594→                  <Input className="pl-10 bg-zinc-800 border-zinc-700 text-white" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+   595→                </div>
+   596→              </div>
+   597→              <div>
+   598→                <Label className="text-zinc-300">Mot de passe</Label>
+   599→                <div className="relative mt-1">
+   600→                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+   601→                  <Input className="pl-10 pr-10 bg-zinc-800 border-zinc-700 text-white" type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required />
+   602→                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+   603→                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+   604→                  </button>
+   605→                </div>
+   606→              </div>
+   607→              {error && <p className="text-red-400 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+   608→              <Button type="submit" disabled={loading} className="w-full bg-amber-500 text-black hover:bg-amber-600">{loading ? 'Connexion...' : 'Se connecter'}</Button>
+   609→            </form>
+   610→            <div className="text-center mt-4 space-y-2">
+   611→              <p className="text-zinc-400 text-sm">Pas encore de compte ? <button onClick={() => setPage('mini-register')} className="text-amber-500 hover:underline">S&apos;inscrire</button></p>
+   612→              <button onClick={() => setPage('mini-admin-login')} className="text-zinc-500 hover:text-zinc-300 text-xs">Accès Administration</button>
+   613→              <br />
+   614→              <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour</button>
+   615→            </div>
+   616→          </CardContent>
+   617→        </Card>
+   618→      </motion.div>
+   619→    </div>
+   620→  )
+   621→}
+   622→
+   623→// ─── Admin Login Page ───
+   624→function AdminLoginPage() {
+   625→  const { setPage, setAdmin, setAdminEmail } = useAppStore()
+   626→  const [email, setEmail] = useState('')
+   627→  const [password, setPassword] = useState('')
+   628→  const [loading, setLoading] = useState(false)
+   629→  const [error, setError] = useState('')
+   630→
+   631→  const handleSubmit = async (e: FormEvent) => {
+   632→    e.preventDefault()
+   633→    setError('')
+   634→    setLoading(true)
+   635→    try {
+   636→      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+   637→      const data = await res.json()
+   638→      if (!res.ok) { setError(data.error || 'Identifiants incorrects'); return }
+   639→      setAdmin(true)
+   640→      setAdminEmail(data.admin.email)
+   641→      setPage('admin-loading')
+   642→    } catch { setError('Erreur de connexion') }
+   643→    finally { setLoading(false) }
+   644→  }
+   645→
+   646→  return (
+   647→    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+   648→      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+   649→        <div className="text-center mb-8">
+   650→          <Shield className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+   651→          <h1 className="text-2xl font-bold text-white">Administration ESTAM</h1>
+   652→          <p className="text-zinc-400 text-sm mt-1">Connexion administrateur</p>
+   653→        </div>
+   654→        <Card className="bg-zinc-900 border-zinc-800">
+   655→          <CardContent className="pt-6">
+   656→            <form onSubmit={handleSubmit} className="space-y-4">
+   657→              <div>
+   658→                <Label className="text-zinc-300">Email administrateur</Label>
+   659→                <Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@estam.cg" />
+   660→              </div>
+   661→              <div>
+   662→                <Label className="text-zinc-300">Mot de passe</Label>
+   663→                <Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+   664→              </div>
+   665→              {error && <p className="text-red-400 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+   666→              <Button type="submit" disabled={loading} className="w-full bg-amber-500 text-black hover:bg-amber-600">{loading ? 'Connexion...' : 'Se connecter'}</Button>
+   667→            </form>
+   668→            <div className="text-center mt-4 space-y-2">
+   669→              <button onClick={() => setPage('mini-login')} className="text-zinc-400 text-sm hover:text-amber-500">Connexion Étudiant</button>
+   670→              <br />
+   671→              <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour</button>
+   672→            </div>
+   673→          </CardContent>
+   674→        </Card>
+   675→      </motion.div>
+   676→    </div>
+   677→  )
+   678→}
+   679→
+   680→// ─── Student Dashboard ───
+   681→function StudentDashboard() {
+   682→  const { student, grades, payments, notifications, setPage, setStudent, setGrades, setPayments, setNotifications } = useAppStore()
+   683→  const [tab, setTab] = useState('dashboard')
+   684→  const [sidebarOpen, setSidebarOpen] = useState(false)
+   685→  const [editing, setEditing] = useState(false)
+   686→  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', phone: '', address: '', city: '', nationality: '', genre: '', dateOfBirth: '' })
+   687→  const [saveMsg, setSaveMsg] = useState('')
+   688→
+   689→  if (!student) return null
+   690→
+   691→  const startEdit = () => {
+   692→    setEditForm({ firstName: student.firstName, lastName: student.lastName, phone: student.phone || '', address: student.address || '', city: student.city || '', nationality: student.nationality || '', genre: student.genre || '', dateOfBirth: student.dateOfBirth || '' })
+   693→    setEditing(true)
+   694→    setSaveMsg('')
+   695→  }
+   696→
+   697→  const saveProfile = async () => {
+   698→    try {
+   699→      const res = await fetch('/api/students/update', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: student.id, ...editForm }) })
+   700→      const data = await res.json()
+   701→      if (data.success) {
+   702→        setStudent({ ...student, ...editForm })
+   703→        setSaveMsg('Profil mis à jour avec succès')
+   704→        setEditing(false)
+   705→      } else { setSaveMsg(data.error || 'Erreur') }
+   706→    } catch { setSaveMsg('Erreur serveur') }
+   707→  }
+   708→
+   709→  const unreadNotifs = notifications.filter(n => !n.lu).length
+   710→  const paidCount = payments.filter(p => p.statut === 'paye').length
+   711→  const unpaidCount = payments.filter(p => p.statut === 'impaye').length
+   712→
+   713→  const markRead = async (id: string) => {
+   714→    await fetch('/api/notifications', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notificationId: id }) })
+   715→    setNotifications(notifications.map(n => n.id === id ? { ...n, lu: true } : n))
+   716→  }
+   717→
+   718→  const handleLogout = () => {
+   719→    setStudent(null); setGrades([]); setPayments([]); setNotifications([])
+   720→    setPage('landing')
+   721→  }
+   722→
+   723→  const menuItems = [
+   724→    { id: 'dashboard', icon: BarChart3, label: 'Tableau de bord' },
+   725→    { id: 'notes', icon: BookOpen, label: 'Mes Notes' },
+   726→    { id: 'paiements', icon: CreditCard, label: 'Mes Paiements' },
+   727→    { id: 'notifications', icon: Bell, label: `Notifications${unreadNotifs > 0 ? ` (${unreadNotifs})` : ''}` },
+   728→    { id: 'profil', icon: User, label: 'Mon Profil' },
+   729→  ]
+   730→
+   731→  return (
+   732→    <div className="min-h-screen bg-black flex">
+   733→      {/* Mobile overlay */}
+   734→      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+   735→      {/* Sidebar */}
+   736→      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+   737→        <div className="p-4 border-b border-zinc-800 flex items-center gap-3">
+   738→          <img src="/estam/IMG_1627.webp" alt="ESTAM" className="w-10 h-10 rounded-full object-cover" />
+   739→          <div>
+   740→            <p className="text-amber-500 font-bold text-sm">ESTAM</p>
+   741→            <p className="text-zinc-500 text-xs">Espace Étudiant</p>
+   742→          </div>
+   743→          <button className="ml-auto lg:hidden text-zinc-400" onClick={() => setSidebarOpen(false)}><X className="w-5 h-5" /></button>
+   744→        </div>
+   745→        <nav className="flex-1 p-3 space-y-1">
+   746→          {menuItems.map(item => (
+   747→            <button key={item.id} onClick={() => { setTab(item.id); setSidebarOpen(false) }}
+   748→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${tab === item.id ? 'bg-amber-500/10 text-amber-500' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}`}>
+   749→              <item.icon className="w-5 h-5" />{item.label}
+   750→            </button>
+   751→          ))}
+   752→        </nav>
+   753→        <div className="p-3 border-t border-zinc-800">
+   754→          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition">
+   755→            <LogOut className="w-5 h-5" />Déconnexion
+   756→          </button>
+   757→        </div>
+   758→      </aside>
+   759→
+   760→      {/* Main */}
+   761→      <main className="flex-1 min-h-screen">
+   762→        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-zinc-800 px-4 sm:px-6 h-14 flex items-center gap-4">
+   763→          <button className="lg:hidden text-zinc-400" onClick={() => setSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
+   764→          <h2 className="text-white font-semibold text-sm sm:text-base">{menuItems.find(m => m.id === tab)?.label}</h2>
+   765→          <div className="ml-auto flex items-center gap-3">
+   766→            <Badge variant="outline" className="border-amber-500/30 text-amber-500 text-xs font-mono">{student.studentId}</Badge>
+   767→            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 text-sm font-bold">
+   768→              {student.firstName[0]}{student.lastName[0]}
+   769→            </div>
+   770→          </div>
+   771→        </header>
+   772→
+   773→        <div className="p-4 sm:p-6 max-w-6xl">
+   774→          {/* Dashboard Tab */}
+   775→          {tab === 'dashboard' && (
+   776→            <div className="space-y-6">
+   777→              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+   778→                <Card className="bg-zinc-900 border-zinc-800">
+   779→                  <CardContent className="pt-6">
+   780→                    <h3 className="text-white text-lg font-semibold">Bienvenue, {student.firstName} {student.lastName}</h3>
+   781→                    <p className="text-zinc-400 text-sm mt-1">{student.filiere} - {student.niveau} | {student.anneeScolaire}</p>
+   782→                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+   783→                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-amber-500">{grades.length}</p><p className="text-zinc-400 text-xs">Notes</p></div>
+   784→                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-green-400">{paidCount}</p><p className="text-zinc-400 text-xs">Payés</p></div>
+   785→                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-red-400">{unpaidCount}</p><p className="text-zinc-400 text-xs">Impayés</p></div>
+   786→                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-amber-400">{unreadNotifs}</p><p className="text-zinc-400 text-xs">Notifications</p></div>
+   787→                    </div>
+   788→                  </CardContent>
+   789→                </Card>
+   790→              </motion.div>
+   791→              {/* Recent notifications */}
+   792→              {notifications.slice(0, 3).map(n => (
+   793→                <motion.div key={n.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+   794→                  <Card className={`bg-zinc-900 border-zinc-800 ${!n.lu ? 'border-l-2 border-l-amber-500' : ''}`}>
+   795→                    <CardContent className="py-3 px-4 flex items-start gap-3">
+   796→                      <Bell className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+   797→                      <div className="flex-1 min-w-0">
+   798→                        <p className="text-white text-sm font-medium">{n.titre}</p>
+   799→                        <p className="text-zinc-400 text-xs mt-0.5 truncate">{n.message}</p>
+   800→                      </div>
+   801→                      <span className="text-zinc-600 text-xs flex-shrink-0">{new Date(n.createdAt).toLocaleDateString('fr-FR')}</span>
+   802→                    </CardContent>
+   803→                  </Card>
+   804→                </motion.div>
+   805→              ))}
+   806→              {notifications.length === 0 && <p className="text-zinc-500 text-sm text-center py-8">Aucune notification</p>}
+   807→            </div>
+   808→          )}
+   809→
+   810→          {/* Notes Tab */}
+   811→          {tab === 'notes' && (
+   812→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+   813→              {grades.length === 0 ? (
+   814→                <Card className="bg-zinc-900 border-zinc-800"><CardContent className="py-12 text-center"><BookOpen className="w-12 h-12 text-zinc-700 mx-auto mb-3" /><p className="text-zinc-500">Aucune note publiée pour le moment</p></CardContent></Card>
+   815→              ) : (
+   816→                <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
+   817→                  <div className="overflow-x-auto">
+   818→                    <table className="w-full text-sm">
+   819→                      <thead><tr className="border-b border-zinc-800">
+   820→                        <th className="text-left text-zinc-400 font-medium px-4 py-3">Matière</th>
+   821→                        <th className="text-left text-zinc-400 font-medium px-4 py-3">Type</th>
+   822→                        <th className="text-left text-zinc-400 font-medium px-4 py-3">Note</th>
+   823→                        <th className="text-left text-zinc-400 font-medium px-4 py-3 hidden sm:table-cell">Coeff.</th>
+   824→                        <th className="text-left text-zinc-400 font-medium px-4 py-3">Semestre</th>
+   825→                      </tr></thead>
+   826→                      <tbody>
+   827→                        {grades.map(g => (
+   828→                          <tr key={g.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition">
+   829→                            <td className="px-4 py-3 text-white">{g.matiere}</td>
+   830→                            <td className="px-4 py-3"><Badge variant="outline" className="border-zinc-700 text-zinc-300 text-xs">{g.type}</Badge></td>
+   831→                            <td className="px-4 py-3 font-bold text-amber-500">{g.note}</td>
+   832→                            <td className="px-4 py-3 text-zinc-400 hidden sm:table-cell">{g.coefficient || '-'}</td>
+   833→                            <td className="px-4 py-3 text-zinc-400">{g.semestre}</td>
+   834→                          </tr>
+   835→                        ))}
+   836→                      </tbody>
+   837→                    </table>
+   838→                  </div>
+   839→                </Card>
+   840→              )}
+   841→            </motion.div>
+   842→          )}
+   843→
+   844→          {/* Paiements Tab */}
+   845→          {tab === 'paiements' && (
+   846→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+   847→              {payments.length === 0 ? (
+   848→                <Card className="bg-zinc-900 border-zinc-800"><CardContent className="py-12 text-center"><CreditCard className="w-12 h-12 text-zinc-700 mx-auto mb-3" /><p className="text-zinc-500">Aucun paiement enregistré</p></CardContent></Card>
+   849→              ) : (
+   850→                <div className="grid sm:grid-cols-2 gap-4">
+   851→                  {payments.map(p => (
+   852→                    <Card key={p.id} className="bg-zinc-900 border-zinc-800">
+   853→                      <CardContent className="pt-4">
+   854→                        <div className="flex items-center justify-between mb-2">
+   855→                          <span className="text-white font-medium">{p.mois}</span>
+   856→                          <Badge className={p.statut === 'paye' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}>
+   857→                            {p.statut === 'paye' ? <><CheckCircle2 className="w-3 h-3 mr-1" />Payé</> : <><XCircle className="w-3 h-3 mr-1" />Impayé</>}
+   858→                          </Badge>
+   859→                        </div>
+   860→                        <p className="text-amber-500 font-bold text-lg">{p.montant.toLocaleString()} FCFA</p>
+   861→                        {p.datePaiement && <p className="text-zinc-500 text-xs mt-1">Date : {p.datePaiement}</p>}
+   862→                        <p className="text-zinc-600 text-xs mt-1">Année : {p.anneeScolaire}</p>
+   863→                      </CardContent>
+   864→                    </Card>
+   865→                  ))}
+   866→                </div>
+   867→              )}
+   868→            </motion.div>
+   869→          )}
+   870→
+   871→          {/* Notifications Tab */}
+   872→          {tab === 'notifications' && (
+   873→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+   874→              {notifications.length === 0 && <p className="text-zinc-500 text-sm text-center py-12">Aucune notification</p>}
+   875→              {notifications.map(n => (
+   876→                <Card key={n.id} className={`bg-zinc-900 border-zinc-800 cursor-pointer transition hover:border-zinc-600 ${!n.lu ? 'border-l-2 border-l-amber-500' : ''}`}
+   877→                  onClick={() => !n.lu && markRead(n.id)}>
+   878→                  <CardContent className="py-4 px-4">
+   879→                    <div className="flex items-start gap-3">
+   880→                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${n.type === 'note' ? 'bg-amber-500/20' : n.type === 'paiement' ? 'bg-green-500/20' : 'bg-blue-500/20'}`}>
+   881→                        {n.type === 'note' ? <BookOpen className="w-4 h-4 text-amber-500" /> : n.type === 'paiement' ? <CreditCard className="w-4 h-4 text-green-400" /> : <Bell className="w-4 h-4 text-blue-400" />}
+   882→                      </div>
+   883→                      <div className="flex-1 min-w-0">
+   884→                        <div className="flex items-center gap-2">
+   885→                          <p className="text-white text-sm font-medium">{n.titre}</p>
+   886→                          {!n.lu && <span className="w-2 h-2 rounded-full bg-amber-500" />}
+   887→                        </div>
+   888→                        <p className="text-zinc-400 text-xs mt-1">{n.message}</p>
+   889→                        <p className="text-zinc-600 text-xs mt-1">{new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+   890→                      </div>
+   891→                    </div>
+   892→                  </CardContent>
+   893→                </Card>
+   894→              ))}
+   895→            </motion.div>
+   896→          )}
+   897→
+   898→          {/* Profil Tab */}
+   899→          {tab === 'profil' && (
+   900→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+
+[showing lines 401-900 of 1427; use offset=901 with limit to continue reading]

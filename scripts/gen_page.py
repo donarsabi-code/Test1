@@ -1,4 +1,7 @@
-'use client'
+#!/usr/bin/env python3
+"""Generate the main page.tsx for ESTAM student management app."""
+
+content = r"""'use client'
 
 import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
@@ -1763,3 +1766,9 @@ export default function Home() {
     default: return <LandingPage />
   }
 }
+"""
+
+with open('/home/z/my-project/src/app/page.tsx', 'w') as f:
+    f.write(content)
+
+print("page.tsx written successfully")

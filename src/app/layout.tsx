@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   description: "Espace étudiant ESTAM Congo Brazzaville - Gestion des notes, inscriptions et paiements. Une formation, un métier, une réussite.",
   keywords: ["ESTAM", "Congo Brazzaville", "université", "gestion", "technologie", "inscription"],
   icons: {
-    icon: "/estam/IMG_1627.webp",
-  },
+      icon: "/estam/IMG_1693.png",
+    },
 };
 
 export default function RootLayout({

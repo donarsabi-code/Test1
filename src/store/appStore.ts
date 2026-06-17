@@ -4,6 +4,7 @@ export type Page =
   | 'landing'
   | 'register'
   | 'verify'
+  | 'verification-steps'
   | 'login'
   | 'admin-login'
   | 'loading'
@@ -25,6 +26,10 @@ export interface Student {
   phone: string | null;
   photoUrl: string | null;
   status: string;
+  dateOfBirth?: string | null;
+  address?: string | null;
+  nationality?: string | null;
+  genre?: string | null;
 }
 
 export interface Grade {
@@ -93,6 +98,10 @@ interface AppStore {
   // Admin selected student
   selectedStudent: Record<string, unknown> | null;
   setSelectedStudent: (s: Record<string, unknown> | null) => void;
+
+  // Notification reply
+  notificationReplies: Record<string, string>;
+  setNotificationReply: (notifId: string, reply: string) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -121,4 +130,9 @@ export const useAppStore = create<AppStore>((set) => ({
 
   selectedStudent: null,
   setSelectedStudent: (s) => set({ selectedStudent: s }),
+
+  notificationReplies: {},
+  setNotificationReply: (notifId, reply) => set((state) => ({
+    notificationReplies: { ...state.notificationReplies, [notifId]: reply }
+  })),
 }));

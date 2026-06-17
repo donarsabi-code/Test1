@@ -41,10 +41,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-amber-500: #f59e0b;
-  --color-amber-600: #d97706;
-  --color-amber-400: #fbbf24;
-  --color-amber-700: #b45309;
 }
 
 :root {
@@ -55,8 +51,8 @@
   --card-foreground: #fafafa;
   --popover: #18181b;
   --popover-foreground: #fafafa;
-  --primary: #f59e0b;
-  --primary-foreground: #09090b;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
   --secondary: #27272a;
   --secondary-foreground: #fafafa;
   --muted: #27272a;
@@ -66,20 +62,20 @@
   --destructive: #ef4444;
   --border: #3f3f46;
   --input: #3f3f46;
-  --ring: #f59e0b;
-  --chart-1: #f59e0b;
-  --chart-2: #fbbf24;
-  --chart-3: #d97706;
-  --chart-4: #b45309;
-  --chart-5: #92400e;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
+  --chart-2: #3b82f6;
+  --chart-3: #1d4ed8;
+  --chart-4: #60a5fa;
+  --chart-5: #93c5fd;
   --sidebar: #18181b;
   --sidebar-foreground: #fafafa;
-  --sidebar-primary: #f59e0b;
-  --sidebar-primary-foreground: #09090b;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #27272a;
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #3f3f46;
-  --sidebar-ring: #f59e0b;
+  --sidebar-ring: #2563eb;
 }
 
 @layer base {
@@ -129,7 +125,7 @@ html {
     90deg,
     #fafafa 0%,
     #fafafa 35%,
-    #f59e0b 50%,
+    #3b82f6 50%,
     #fafafa 65%,
     #fafafa 100%
   );
@@ -140,18 +136,27 @@ html {
   animation: shimmer 3s linear infinite;
 }
 
-.shimmer-gold {
+.shimmer-blue {
   background: linear-gradient(
     90deg,
-    #f59e0b 0%,
-    #fbbf24 25%,
+    #2563eb 0%,
+    #3b82f6 25%,
     #ffffff 50%,
-    #fbbf24 75%,
-    #f59e0b 100%
+    #3b82f6 75%,
+    #2563eb 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: shimmer 3s linear infinite;
+}
+
+/* Notification popup */
+.notif-popup {
+  animation: slideDown 0.2s ease-out;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
