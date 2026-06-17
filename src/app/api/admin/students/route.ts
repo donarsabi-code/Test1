@@ -16,9 +16,9 @@ export async function GET(req: NextRequest) {
     if (filiere) where.filiere = filiere;
     if (search) {
       where.OR = [
-        { studentId: { contains: search } },
-        { firstName: { contains: search } },
-        { lastName: { contains: search } },
+        { studentId: { contains: search, mode: 'insensitive' } },
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
       ];
     }
 
