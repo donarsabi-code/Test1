@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Student {
+  id              String   @id @default(cuid())
+  studentId       String   @unique // EST + 9 digits
+  email           String   @unique
+  password        String
+  firstName       String
+  lastName        String
+  dateOfBirth     String?
+  phone           String?
+  address         String?
+  city            String?   // Brazzaville or Pointe-Noire
+  nationality     String?
+  genre           String?
+  filiereCategory String   // "Gestion" or "Technologie"
+  filiere         String   // Specific filière name
+  niveau          String   // L1, L2, L3
+  anneeScolaire   String?
+  photoUrl        String?
+  status          String   @default("actif") // actif, inactif
+  verified        Boolean  @default(false)
+  verificationCode String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  grades       Grade[]
+  payments     Payment[]
+  notifications Notification[]
+}
+
+model Grade {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  matiere     String
+  type        String   // session, devoir, semestre, rattrapage
+  note        String   // e.g. "14/20"
+  coefficient Float?
+  semestre    String
+  anneeScolaire String
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  mois          String   // e.g. "Octobre 2025"
+  montant       Float
+  datePaiement  String?
+  statut        String   @default("impaye") // paye, impaye
+  anneeScolaire String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  titre     String
+  message   String
+  type      String   @default("info") // info, note, paiement, alerte
+  lu        Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
