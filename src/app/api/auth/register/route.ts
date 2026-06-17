@@ -15,7 +15,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
     }
 
-    const existingStudent = await db.student.findUnique({ where: { email } });
+    // Only allow @gmail.com emails
+    if (!email.toLowerCase().endsWith('@gmail.com')) {
+      return NextResponse.json({ error: 'Seules les adresses @gmail.com sont acceptées' }, { status: 400 });
+    }
+
+    const existingStudent = await db.student.findUnique({ where: { email: email.toLowerCase() } });
     if (existingStudent) {
       return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 409 });
     }
@@ -30,7 +35,7 @@ export async function POST(req: NextRequest) {
     const student = await db.student.create({
       data: {
         studentId,
-        email,
+        email: email.toLowerCase(),
         password,
         firstName,
         lastName,

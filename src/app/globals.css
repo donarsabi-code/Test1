@@ -110,3 +110,48 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Hide Next.js Dev Tools */
+[style*="next-dev-tools"],
+[data-nextjs-devtools],
+[id*="nextjs-portal-"] {
+  display: none !important;
+}
+
+/* Shimmer / Light Sweep Effect */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #fafafa 0%,
+    #fafafa 35%,
+    #f59e0b 50%,
+    #fafafa 65%,
+    #fafafa 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+.shimmer-gold {
+  background: linear-gradient(
+    90deg,
+    #f59e0b 0%,
+    #fbbf24 25%,
+    #ffffff 50%,
+    #fbbf24 75%,
+    #f59e0b 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}

@@ -17,23 +17,28 @@ import {
   GraduationCap, BookOpen, Users, Bell, LogOut, Settings, Search,
   User, Mail, Lock, Phone, MapPin, Calendar, ChevronRight, Award,
   CreditCard, CheckCircle2, XCircle, AlertCircle, Eye, EyeOff,
-  Menu, X, ArrowLeft, Building2, BarChart3, FileText, Shield
+  Menu, X, ArrowLeft, Building2, BarChart3, FileText, Shield,
+  Trash2, Send, Edit3, Save, Check, Megaphone, Clock, Loader2
 } from 'lucide-react'
 
 // ─── Data Constants ───
 const FILIERES: Record<string, string[]> = {
   Gestion: [
     'Comptabilité et Gestion',
+    'Finance, Banque et Assurances',
     'Marketing et Action Commerciale',
     'Gestion des Ressources Humaines',
     'Gestion Commerciale',
     'Transport et Logistique',
+    'Communication et Marketing',
   ],
   Technologie: [
     'Génie Civil',
     'Génie Électrique',
     'Informatique de Gestion',
     'Réseaux Informatiques et Télécommunications',
+    'Audit Sécurité et Systèmes des Réseaux Informatiques',
+    'Informatique Industriel et Maintenance',
   ],
 }
 
@@ -56,7 +61,24 @@ function Reveal({ children, className = '', delay = 0 }: { children: React.React
   )
 }
 
-// ─── Loading Page ───
+// ─── Mini Loading (brief transition) ───
+function MiniLoading({ targetPage }: { targetPage: Page }) {
+  const setPage = useAppStore(s => s.setPage)
+  useEffect(() => {
+    const t = setTimeout(() => setPage(targetPage), 800)
+    return () => clearTimeout(t)
+  }, [setPage, targetPage])
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black">
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}>
+        <Loader2 className="w-10 h-10 text-amber-500" />
+      </motion.div>
+      <p className="mt-4 text-zinc-400 text-sm">Chargement...</p>
+    </div>
+  )
+}
+
+// ─── Loading Page (longer, for login) ───
 function LoadingPage({ targetPage }: { targetPage: Page }) {
   const setPage = useAppStore(s => s.setPage)
   const [progress, setProgress] = useState(0)
@@ -75,7 +97,7 @@ function LoadingPage({ targetPage }: { targetPage: Page }) {
       <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
         <GraduationCap className="w-16 h-16 text-amber-500" />
       </motion.div>
-      <p className="mt-6 text-amber-500 text-lg font-semibold tracking-wider">ESTAM</p>
+      <p className="mt-6 shimmer-gold text-2xl font-bold tracking-wider">ESTAM</p>
       <p className="text-zinc-400 text-sm mt-2">Chargement de votre espace...</p>
       <div className="w-64 mt-6">
         <Progress value={progress} className="h-2 bg-zinc-800 [&>div]:bg-amber-500" />
@@ -102,8 +124,8 @@ function LandingPage() {
             <button onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })} className="text-zinc-300 hover:text-amber-500 transition text-sm">Contact</button>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black text-sm" onClick={() => setPage('login')}>Connexion</Button>
-            <Button className="bg-amber-500 text-black hover:bg-amber-600 text-sm" onClick={() => setPage('register')}>S&apos;inscrire</Button>
+            <Button variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black text-sm" onClick={() => setPage('mini-login')}>Connexion</Button>
+            <Button className="bg-amber-500 text-black hover:bg-amber-600 text-sm" onClick={() => setPage('mini-register')}>S&apos;inscrire</Button>
           </div>
         </div>
       </nav>
@@ -120,21 +142,21 @@ function LandingPage() {
           </Reveal>
           <Reveal delay={0.1}>
             <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4">
-              <span className="text-amber-500">ESTAM</span>
+              <span className="shimmer-gold text-4xl sm:text-6xl font-bold">ESTAM</span>
             </h1>
           </Reveal>
           <Reveal delay={0.2}>
             <p className="text-lg sm:text-xl text-zinc-300 mb-2">École Supérieure des Technologies Avancées et de Management</p>
           </Reveal>
           <Reveal delay={0.3}>
-            <p className="text-amber-500 font-semibold italic text-lg mb-8">&laquo; Une formation, un métier, une réussite &raquo;</p>
+            <p className="shimmer-text text-amber-500 font-semibold italic text-lg mb-8">&laquo; Une formation, un métier, une réussite &raquo;</p>
           </Reveal>
           <Reveal delay={0.4}>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-amber-500 text-black hover:bg-amber-600 text-base px-8 py-6" onClick={() => setPage('register')}>
+              <Button size="lg" className="bg-amber-500 text-black hover:bg-amber-600 text-base px-8 py-6" onClick={() => setPage('mini-register')}>
                 <GraduationCap className="w-5 h-5 mr-2" /> S&apos;inscrire maintenant
               </Button>
-              <Button size="lg" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black text-base px-8 py-6" onClick={() => setPage('login')}>
+              <Button size="lg" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black text-base px-8 py-6" onClick={() => setPage('mini-login')}>
                 <LogIn className="w-5 h-5 mr-2" /> Se connecter
               </Button>
             </div>
@@ -149,7 +171,7 @@ function LandingPage() {
       <section id="apropos" className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <Reveal>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-4">À propos de l&apos;ESTAM</h2>
+            <h2 className="shimmer-gold text-3xl sm:text-4xl font-bold text-center text-white mb-4">À propos de l&apos;ESTAM</h2>
             <div className="w-20 h-1 bg-amber-500 mx-auto mb-12" />
           </Reveal>
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -244,7 +266,7 @@ function LandingPage() {
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto">
           <Reveal>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-4">Inscription</h2>
+            <h2 className="shimmer-gold text-3xl sm:text-4xl font-bold text-center text-white mb-4">Inscription</h2>
             <div className="w-20 h-1 bg-amber-500 mx-auto mb-12" />
           </Reveal>
           <div className="grid sm:grid-cols-2 gap-6">
@@ -254,19 +276,19 @@ function LandingPage() {
                   <CardTitle className="text-amber-500 flex items-center gap-2"><FileText className="w-5 h-5" /> Nouvelle inscription</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-zinc-300 text-sm">Frais d&apos;inscription : <span className="text-amber-500 font-bold text-lg">25 000 FCFA</span></p>
-                  <p className="text-zinc-400 text-xs mt-2">Dossier à fournir sur place lors de la rentrée</p>
+                  <p className="text-zinc-300 text-sm">Frais d&apos;inscription : <span className="text-amber-500 font-bold text-lg">26 000 FCFA</span></p>
+                  <p className="text-zinc-400 text-xs mt-2">Ouvert lun-ven 8h-17h, sam 8h-12h</p>
                 </CardContent>
               </Card>
             </Reveal>
             <Reveal delay={0.2}>
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
-                  <CardTitle className="text-amber-500 flex items-center gap-2"><CreditCard className="w-5 h-5" /> Réinscription</CardTitle>
+                  <CardTitle className="text-amber-500 flex items-center gap-2"><Clock className="w-5 h-5" /> Cours du soir</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-zinc-300 text-sm">Réinscription : <span className="text-green-400 font-bold text-lg">Gratuite</span></p>
-                  <p className="text-zinc-400 text-xs mt-2">Se reconnecter avec vos identifiants existants</p>
+                  <p className="text-zinc-300 text-sm">Vague Soir : <span className="shimmer-gold font-bold text-lg">Disponible</span></p>
+                  <p className="text-zinc-400 text-xs mt-2">Pour les travailleurs, cours du soir aménagés</p>
                 </CardContent>
               </Card>
             </Reveal>
@@ -283,7 +305,7 @@ function LandingPage() {
       <section id="contact" className="py-20 px-4 bg-zinc-950">
         <div className="max-w-4xl mx-auto">
           <Reveal>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-4">Contact</h2>
+            <h2 className="shimmer-gold text-3xl sm:text-4xl font-bold text-center text-white mb-4">Contact</h2>
             <div className="w-20 h-1 bg-amber-500 mx-auto mb-12" />
           </Reveal>
           <div className="grid sm:grid-cols-2 gap-6">
@@ -293,9 +315,9 @@ function LandingPage() {
                   <CardTitle className="text-white text-lg">Brazzaville</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-zinc-300 text-sm flex items-start gap-2"><MapPin className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> Brazzaville, République du Congo</p>
+                  <p className="text-zinc-300 text-sm flex items-start gap-2"><MapPin className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> 233 Rue de la Libération / 22 Rue Likouala, Poto-Poto</p>
                   <p className="text-zinc-300 text-sm flex items-start gap-2"><Phone className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> +242 06 822 91 78</p>
-                  <p className="text-zinc-300 text-sm flex items-start gap-2"><Phone className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> +242 05 557 58 32</p>
+                  <p className="text-zinc-300 text-sm flex items-start gap-2"><Phone className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> +242 05 557 58 32 (WhatsApp)</p>
                 </CardContent>
               </Card>
             </Reveal>
@@ -305,7 +327,7 @@ function LandingPage() {
                   <CardTitle className="text-white text-lg">Pointe-Noire</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-zinc-300 text-sm flex items-start gap-2"><MapPin className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> 82 Avenue Nelson Mandela, entre le rond-point ILAMA et la route de l&apos;aéroport</p>
+                  <p className="text-zinc-300 text-sm flex items-start gap-2"><MapPin className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> 82 Avenue Nelson Mandela, rd-pt ILAMA</p>
                   <p className="text-zinc-300 text-sm flex items-start gap-2"><Mail className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> info@estamuni.net</p>
                   <p className="text-zinc-300 text-sm flex items-start gap-2"><Globe className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> estam.cg</p>
                 </CardContent>
@@ -331,7 +353,7 @@ function LandingPage() {
             © {new Date().getFullYear()} École Supérieure des Technologies Avancées et de Management. Tous droits réservés.
           </p>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-amber-500 text-xs" onClick={() => setPage('admin-login')}>
+            <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-amber-500 text-xs" onClick={() => setPage('mini-admin-login')}>
               <Shield className="w-3 h-3 mr-1" /> Administration
             </Button>
           </div>
@@ -407,7 +429,7 @@ function RegisterPage() {
                 <div><Label className="text-zinc-300">Nom *</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.lastName} onChange={e => update('lastName', e.target.value)} required /></div>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div><Label className="text-zinc-300">Email *</Label><Input type="email" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.email} onChange={e => update('email', e.target.value)} required /></div>
+                <div><Label className="text-zinc-300">Email *</Label><Input type="email" className="mt-1 bg-zinc-800 border-zinc-700 text-white" placeholder="exemple@gmail.com" value={form.email} onChange={e => update('email', e.target.value)} required /></div>
                 <div><Label className="text-zinc-300">Mot de passe *</Label><Input type="password" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.password} onChange={e => update('password', e.target.value)} required /></div>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -459,7 +481,7 @@ function RegisterPage() {
               </Button>
             </form>
             <div className="text-center mt-4 space-y-2">
-              <p className="text-zinc-400 text-sm">Déjà inscrit ? <button onClick={() => setPage('login')} className="text-amber-500 hover:underline">Se connecter</button></p>
+              <p className="text-zinc-400 text-sm">Déjà inscrit ? <button onClick={() => setPage('mini-login')} className="text-amber-500 hover:underline">Se connecter</button></p>
               <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour à l&apos;accueil</button>
             </div>
           </CardContent>
@@ -586,8 +608,8 @@ function LoginPage() {
               <Button type="submit" disabled={loading} className="w-full bg-amber-500 text-black hover:bg-amber-600">{loading ? 'Connexion...' : 'Se connecter'}</Button>
             </form>
             <div className="text-center mt-4 space-y-2">
-              <p className="text-zinc-400 text-sm">Pas encore de compte ? <button onClick={() => setPage('register')} className="text-amber-500 hover:underline">S&apos;inscrire</button></p>
-              <button onClick={() => setPage('admin-login')} className="text-zinc-500 hover:text-zinc-300 text-xs">Accès Administration</button>
+              <p className="text-zinc-400 text-sm">Pas encore de compte ? <button onClick={() => setPage('mini-register')} className="text-amber-500 hover:underline">S&apos;inscrire</button></p>
+              <button onClick={() => setPage('mini-admin-login')} className="text-zinc-500 hover:text-zinc-300 text-xs">Accès Administration</button>
               <br />
               <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour</button>
             </div>
@@ -644,7 +666,7 @@ function AdminLoginPage() {
               <Button type="submit" disabled={loading} className="w-full bg-amber-500 text-black hover:bg-amber-600">{loading ? 'Connexion...' : 'Se connecter'}</Button>
             </form>
             <div className="text-center mt-4 space-y-2">
-              <button onClick={() => setPage('login')} className="text-zinc-400 text-sm hover:text-amber-500">Connexion Étudiant</button>
+              <button onClick={() => setPage('mini-login')} className="text-zinc-400 text-sm hover:text-amber-500">Connexion Étudiant</button>
               <br />
               <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour</button>
             </div>
@@ -660,8 +682,29 @@ function StudentDashboard() {
   const { student, grades, payments, notifications, setPage, setStudent, setGrades, setPayments, setNotifications } = useAppStore()
   const [tab, setTab] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', phone: '', address: '', city: '', nationality: '', genre: '', dateOfBirth: '' })
+  const [saveMsg, setSaveMsg] = useState('')
 
   if (!student) return null
+
+  const startEdit = () => {
+    setEditForm({ firstName: student.firstName, lastName: student.lastName, phone: student.phone || '', address: student.address || '', city: student.city || '', nationality: student.nationality || '', genre: student.genre || '', dateOfBirth: student.dateOfBirth || '' })
+    setEditing(true)
+    setSaveMsg('')
+  }
+
+  const saveProfile = async () => {
+    try {
+      const res = await fetch('/api/students/update', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: student.id, ...editForm }) })
+      const data = await res.json()
+      if (data.success) {
+        setStudent({ ...student, ...editForm })
+        setSaveMsg('Profil mis à jour avec succès')
+        setEditing(false)
+      } else { setSaveMsg(data.error || 'Erreur') }
+    } catch { setSaveMsg('Erreur serveur') }
+  }
 
   const unreadNotifs = notifications.filter(n => !n.lu).length
   const paidCount = payments.filter(p => p.statut === 'paye').length
@@ -854,35 +897,69 @@ function StudentDashboard() {
 
           {/* Profil Tab */}
           {tab === 'profil' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 text-2xl font-bold">
-                      {student.firstName[0]}{student.lastName[0]}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 text-2xl font-bold">
+                        {student.firstName[0]}{student.lastName[0]}
+                      </div>
+                      <div>
+                        <CardTitle className="text-white">{student.firstName} {student.lastName}</CardTitle>
+                        <CardDescription className="text-amber-500 font-mono">{student.studentId}</CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-white">{student.firstName} {student.lastName}</CardTitle>
-                      <CardDescription className="text-amber-500 font-mono">{student.studentId}</CardDescription>
-                    </div>
+                    {!editing ? (
+                      <Button variant="outline" size="sm" className="border-amber-500/30 text-amber-500 text-xs" onClick={startEdit}><Edit3 className="w-3 h-3 mr-1" />Modifier</Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button size="sm" className="bg-amber-500 text-black hover:bg-amber-600 text-xs" onClick={saveProfile}><Save className="w-3 h-3 mr-1" />Enregistrer</Button>
+                        <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-400 text-xs" onClick={() => { setEditing(false); setSaveMsg('') }}>Annuler</Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {[
-                      { label: 'Email', value: student.email, icon: Mail },
-                      { label: 'Téléphone', value: student.phone || '-', icon: Phone },
-                      { label: 'Ville', value: student.city || '-', icon: MapPin },
-                      { label: 'Filière', value: student.filiere, icon: BookOpen },
-                      { label: 'Niveau', value: student.niveau, icon: GraduationCap },
-                      { label: 'Année', value: student.anneeScolaire, icon: Calendar },
-                    ].map(item => (
-                      <div key={item.label} className="bg-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                        <item.icon className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                        <div><p className="text-zinc-500 text-xs">{item.label}</p><p className="text-white text-sm">{item.value}</p></div>
+                  {saveMsg && <p className={`text-sm flex items-center gap-1 ${saveMsg.includes('succès') ? 'text-green-400' : 'text-red-400'}`}>{saveMsg.includes('succès') ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}{saveMsg}</p>}
+                  {!editing ? (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {[
+                        { label: 'Email', value: student.email, icon: Mail },
+                        { label: 'Téléphone', value: student.phone || '-', icon: Phone },
+                        { label: 'Ville', value: student.city || '-', icon: MapPin },
+                        { label: 'Filière', value: student.filiere, icon: BookOpen },
+                        { label: 'Niveau', value: student.niveau, icon: GraduationCap },
+                        { label: 'Année', value: student.anneeScolaire, icon: Calendar },
+                      ].map(item => (
+                        <div key={item.label} className="bg-zinc-800 rounded-lg p-3 flex items-center gap-3">
+                          <item.icon className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                          <div><p className="text-zinc-500 text-xs">{item.label}</p><p className="text-white text-sm">{item.value}</p></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div><Label className="text-zinc-300">Prénom</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} /></div>
+                      <div><Label className="text-zinc-300">Nom</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} /></div>
+                      <div><Label className="text-zinc-300">Téléphone</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} /></div>
+                      <div><Label className="text-zinc-300">Date de naissance</Label><Input type="date" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.dateOfBirth} onChange={e => setEditForm({ ...editForm, dateOfBirth: e.target.value })} /></div>
+                      <div><Label className="text-zinc-300">Genre</Label>
+                        <Select value={editForm.genre} onValueChange={v => setEditForm({ ...editForm, genre: v })}>
+                          <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
+                        </Select>
                       </div>
-                    ))}
-                  </div>
+                      <div><Label className="text-zinc-300">Ville</Label>
+                        <Select value={editForm.city} onValueChange={v => setEditForm({ ...editForm, city: v })}>
+                          <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Brazzaville">Brazzaville</SelectItem><SelectItem value="Pointe-Noire">Pointe-Noire</SelectItem></SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:col-span-2"><Label className="text-zinc-300">Adresse</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} /></div>
+                      <div><Label className="text-zinc-300">Nationalité</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.nationality} onChange={e => setEditForm({ ...editForm, nationality: e.target.value })} /></div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -908,6 +985,21 @@ function AdminDashboard() {
   const [payForm, setPayForm] = useState({ mois: MOIS[0], montant: '35000', datePaiement: '', statut: 'impaye', anneeScolaire: new Date().getFullYear().toString() })
   const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' })
   const [pwMsg, setPwMsg] = useState('')
+  const [filiereCounts, setFiliereCounts] = useState<Record<string, number>>({})
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [broadcastForm, setBroadcastForm] = useState({ titre: '', message: '', type: 'info' })
+  const [broadcastMsg, setBroadcastMsg] = useState('')
+
+  // Fetch filière counts
+  const fetchCounts = async () => {
+    try {
+      const res = await fetch('/api/admin/counts')
+      const data = await res.json()
+      setFiliereCounts(data.counts || {})
+    } catch {}
+  }
+
+  useEffect(() => { fetchCounts() }, [tab, selectedStudent])
 
   const fetchStudents = async (category?: string, filiere?: string, search?: string) => {
     setLoading(true)
@@ -928,6 +1020,31 @@ function AdminDashboard() {
   }, [selectedCategory, selectedFiliere, searchQuery])
 
   const handleLogout = () => { setAdmin(false); setPage('landing') }
+
+  const deleteStudents = async (ids: string[]) => {
+    if (!confirm(`Supprimer ${ids.length} étudiant(s) ?`)) return
+    try {
+      await fetch(`/api/admin/students?ids=${ids.join(',')}`, { method: 'DELETE' })
+      setSelectedIds([])
+      fetchStudents(selectedCategory || undefined, selectedFiliere || undefined, searchQuery)
+      fetchCounts()
+    } catch {}
+  }
+
+  const sendBroadcast = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!broadcastForm.titre || !broadcastForm.message) return
+    try {
+      const res = await fetch('/api/notifications/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(broadcastForm) })
+      const data = await res.json()
+      setBroadcastMsg(data.success ? `Notification envoyée à ${data.sent} étudiant(s)` : 'Erreur')
+      setBroadcastForm({ titre: '', message: '', type: 'info' })
+    } catch { setBroadcastMsg('Erreur serveur') }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
 
   const openStudent = async (studentId: string) => {
     try {
@@ -976,6 +1093,7 @@ function AdminDashboard() {
     { id: 'dashboard', icon: BarChart3, label: 'Tableau de bord' },
     { id: 'gestion', icon: Users, label: 'Gestion' },
     { id: 'technologie', icon: Settings, label: 'Technologie' },
+    { id: 'diffusion', icon: Megaphone, label: 'Diffusion' },
     { id: 'parametres', icon: Settings, label: 'Paramètres' },
   ]
 
@@ -1043,18 +1161,24 @@ function AdminDashboard() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-white font-semibold mb-4">Sélectionnez une filière en {tab === 'gestion' ? 'Gestion' : 'Technologie'}</h3>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {FILIERES[tab === 'gestion' ? 'Gestion' : 'Technologie'].map((f, i) => (
-                      <Card key={f} className="bg-zinc-900 border-zinc-800 cursor-pointer hover:border-amber-500/50 transition" onClick={() => { setSelectedCategory(tab === 'gestion' ? 'Gestion' : 'Technologie'); setSelectedFiliere(f); setSearchQuery('') }}>
+                    {FILIERES[tab === 'gestion' ? 'Gestion' : 'Technologie'].map((f, i) => {
+                      const cat = tab === 'gestion' ? 'Gestion' : 'Technologie'
+                      const countKey = `${cat}|||${f}`
+                      const count = filiereCounts[countKey] || 0
+                      return (
+                      <Card key={f} className="bg-zinc-900 border-zinc-800 cursor-pointer hover:border-amber-500/50 transition" onClick={() => { setSelectedCategory(cat); setSelectedFiliere(f); setSearchQuery(''); setSelectedIds([]) }}>
                         <CardContent className="pt-4 flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold">{i + 1}</div>
-                          <div>
-                            <p className="text-white text-sm font-medium">{f}</p>
-                            <p className="text-zinc-500 text-xs">Cliquez pour voir les étudiants</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm font-medium truncate">{f}</p>
+                            <p className="text-zinc-500 text-xs">{count} étudiant{count > 1 ? 's' : ''} inscrit{count > 1 ? 's' : ''}</p>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-zinc-600 ml-auto" />
+                          <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 font-bold text-sm">{count}</div>
+                          <ChevronRight className="w-5 h-5 text-zinc-600" />
                         </CardContent>
                       </Card>
-                    ))}
+                      )
+                    })}
                   </div>
                 </motion.div>
               ) : (
@@ -1063,29 +1187,43 @@ function AdminDashboard() {
                   <h3 className="text-white font-semibold">{selectedFiliere}</h3>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                    <Input className="pl-10 bg-zinc-900 border-zinc-800 text-white" placeholder="Rechercher par identifiant (EST...)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                    <Input className="pl-10 bg-zinc-900 border-zinc-800 text-white" placeholder="Rechercher par nom ou identifiant (EST...)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                   </div>
                   {loading ? <p className="text-zinc-500 text-sm">Chargement...</p> : students.length === 0 ? (
                     <p className="text-zinc-500 text-sm text-center py-12">Aucun étudiant trouvé dans cette filière</p>
                   ) : (
+                    <>
+                    {selectedIds.length > 0 && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-zinc-400 text-sm">{selectedIds.length} sélectionné(s)</span>
+                        <Button variant="destructive" size="sm" className="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs h-8" onClick={(e) => { e.stopPropagation(); deleteStudents(selectedIds) }}><Trash2 className="w-3 h-3 mr-1" />Supprimer</Button>
+                        <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-400 text-xs h-8" onClick={() => { if (confirm('Supprimer TOUS les étudiants de cette filière ?')) deleteStudents(students.map(s => (s as Record<string, string>).id)) }}><Trash2 className="w-3 h-3 mr-1" />Tous supprimer</Button>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       {students.map(s => {
                         const st = s as Record<string, string>
+                        const isSelected = selectedIds.includes(st.id)
                         return (
-                          <Card key={st.id} className="bg-zinc-900 border-zinc-800 cursor-pointer hover:border-amber-500/50 transition" onClick={() => openStudent(st.studentId)}>
+                          <Card key={st.id} className={`bg-zinc-900 border-zinc-800 cursor-pointer hover:border-amber-500/50 transition ${isSelected ? 'border-amber-500/50 bg-amber-500/5' : ''}`} onClick={() => openStudent(st.studentId)}>
                             <CardContent className="py-3 px-4 flex items-center gap-4">
+                              <button onClick={(e) => { e.stopPropagation(); toggleSelect(st.id) }} className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition ${isSelected ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 hover:border-zinc-400'}`}>
+                                {isSelected && <Check className="w-3 h-3 text-black" />}
+                              </button>
                               <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 font-bold text-sm">{(st.firstName || '?')[0]}{(st.lastName || '?')[0]}</div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-white text-sm font-medium">{st.firstName} {st.lastName}</p>
                                 <p className="text-zinc-500 text-xs font-mono">{st.studentId} · {st.niveau}</p>
                               </div>
                               <Badge variant="outline" className={st.verified === 'true' ? 'border-green-500/30 text-green-400' : 'border-zinc-700 text-zinc-500'}>{st.verified === 'true' ? 'Vérifié' : 'Non vérifié'}</Badge>
+                              <button onClick={(e) => { e.stopPropagation(); deleteStudents([st.id]) }} className="text-zinc-600 hover:text-red-400 transition p-1"><Trash2 className="w-4 h-4" /></button>
                               <ChevronRight className="w-5 h-5 text-zinc-600" />
                             </CardContent>
                           </Card>
                         )
                       })}
                     </div>
+                    </>
                   )}
                 </motion.div>
               )}
@@ -1208,6 +1346,32 @@ function AdminDashboard() {
             )
           })()}
 
+          {/* Diffusion */}
+          {tab === 'diffusion' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Card className="bg-zinc-900 border-zinc-800 max-w-2xl">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2"><Megaphone className="w-5 h-5 text-amber-500" /> Diffuser une notification</CardTitle>
+                  <CardDescription className="text-zinc-400">Envoyer instantanément à tous les étudiants vérifiés</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={sendBroadcast} className="space-y-4">
+                    <div><Label className="text-zinc-300">Titre</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={broadcastForm.titre} onChange={e => setBroadcastForm({ ...broadcastForm, titre: e.target.value })} required /></div>
+                    <div><Label className="text-zinc-300">Message</Label><textarea className="mt-1 w-full min-h-[100px] rounded-lg bg-zinc-800 border border-zinc-700 text-white p-3 text-sm resize-none" value={broadcastForm.message} onChange={e => setBroadcastForm({ ...broadcastForm, message: e.target.value })} required /></div>
+                    <div><Label className="text-zinc-300">Type</Label>
+                      <Select value={broadcastForm.type} onValueChange={v => setBroadcastForm({ ...broadcastForm, type: v })}>
+                        <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="info">Information</SelectItem><SelectItem value="alerte">Alerte</SelectItem><SelectItem value="note">Note</SelectItem><SelectItem value="paiement">Paiement</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    {broadcastMsg && <p className={`text-sm flex items-center gap-1 ${broadcastMsg.includes('envoyée') ? 'text-green-400' : 'text-red-400'}`}>{broadcastMsg.includes('envoyée') ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}{broadcastMsg}</p>}
+                    <Button type="submit" className="bg-amber-500 text-black hover:bg-amber-600"><Send className="w-4 h-4 mr-2" />Publier à tous les étudiants</Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Paramètres */}
           {tab === 'parametres' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -1251,6 +1415,9 @@ export default function Home() {
     case 'verify': return <VerifyPage />
     case 'login': return <LoginPage />
     case 'admin-login': return <AdminLoginPage />
+    case 'mini-register': return <MiniLoading targetPage='register' />
+    case 'mini-login': return <MiniLoading targetPage='login' />
+    case 'mini-admin-login': return <MiniLoading targetPage='admin-login' />
     case 'loading': return <LoadingPage targetPage="student-dashboard" />
     case 'admin-loading': return <LoadingPage targetPage="admin-dashboard" />
     case 'student-dashboard': return <StudentDashboard />
