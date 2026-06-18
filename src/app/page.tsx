@@ -1743,7 +1743,7 @@ export default function Home() {
   const currentPage = useAppStore(s => s.currentPage)
 
   useEffect(() => {
-    fetch('/api/auth/register').catch(() => {})
+    fetch('/api/init-db').catch(() => {})
   }, [])
 
   switch (currentPage) {
