@@ -1018,9 +1018,9 @@ function StudentDashboard() {
   const paidCount = payments.filter(p => p.statut === 'paye').length
   const unpaidCount = payments.filter(p => p.statut === 'impaye').length
 
+  const logout = useAppStore(s => s.logout)
   const handleLogout = () => {
-    setStudent(null); setGrades([]); setPayments([]); setNotifications([])
-    setPage('landing')
+    logout()
   }
 
   const menuItems = [
@@ -1295,7 +1295,8 @@ function AdminDashboard() {
     if (tab === 'classe') fetchAllStudents(allSearch)
   }, [tab, allSearch])
 
-  const handleLogout = () => { setAdmin(false); setPage('landing') }
+  const logout = useAppStore(s => s.logout)
+  const handleLogout = () => { logout() }
 
   const deleteStudents = async (ids: string[]) => {
     if (!confirm(`Supprimer ${ids.length} étudiant(s) ?`)) return
@@ -1751,10 +1752,50 @@ function AdminDashboard() {
 // ─── Main Home Component ───
 export default function Home() {
   const currentPage = useAppStore(s => s.currentPage)
+  const hydrated = useAppStore(s => s.hydrated)
+  const student = useAppStore(s => s.student)
+  const isAdmin = useAppStore(s => s.isAdmin)
+  const hydrate = useAppStore(s => s.hydrate)
+  const setStudent = useAppStore(s => s.setStudent)
+  const setGrades = useAppStore(s => s.setGrades)
+  const setPayments = useAppStore(s => s.setPayments)
+  const setNotifications = useAppStore(s => s.setNotifications)
+  const setPage = useAppStore(s => s.setPage)
 
+  // Hydrate state from localStorage on first mount (client-side only)
   useEffect(() => {
     fetch('/api/init-db').catch(() => {})
-  }, [])
+    hydrate()
+  }, [hydrate])
+
+  // After hydration, if on student dashboard, re-fetch fresh data from server
+  useEffect(() => {
+    if (!hydrated) return
+    if (currentPage === 'student-dashboard' && student) {
+      // Re-fetch fresh data for the student
+      const fetchStudentData = async () => {
+        try {
+          const [nRes, gRes, pRes] = await Promise.all([
+            fetch(`/api/notifications?studentDbId=${student.id}`),
+            fetch(`/api/grades?studentDbId=${student.id}`),
+            fetch(`/api/payments?studentDbId=${student.id}`),
+          ])
+          const [nData, gData, pData] = await Promise.all([nRes.json(), gRes.json(), pRes.json()])
+          setNotifications(nData.notifications || [])
+          setGrades(gData.grades || [])
+          setPayments(pData.payments || [])
+        } catch {
+          // If fetch fails, keep the persisted data
+        }
+      }
+      fetchStudentData()
+    }
+  }, [hydrated, currentPage, student, setGrades, setPayments, setNotifications])
+
+  // Wait for hydration before rendering (prevents flash to landing)
+  if (!hydrated) {
+    return null
+  }
 
   switch (currentPage) {
     case 'landing': return <LandingPage />
@@ -1773,4 +1814,3 @@ export default function Home() {
     default: return <LandingPage />
   }
 }
-// ESTAM - Updated 2026-06-20

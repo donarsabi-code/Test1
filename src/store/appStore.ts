@@ -66,6 +66,32 @@ export interface Notification {
   createdAt: string;
 }
 
+// ─── Persisted keys (survive page refresh) ───
+const PERSIST_KEY = 'estam_app_state';
+
+function loadPersistedState() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(PERSIST_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function savePersistedState(partial: Record<string, unknown>) {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = loadPersistedState() || {};
+    const merged = { ...existing, ...partial };
+    localStorage.setItem(PERSIST_KEY, JSON.stringify(merged));
+  } catch { /* ignore */ }
+}
+
+function clearPersistedState() {
+  if (typeof window === 'undefined') return;
+  try { localStorage.removeItem(PERSIST_KEY); } catch { /* ignore */ }
+}
+
 interface AppStore {
   // Navigation
   currentPage: Page;
@@ -102,19 +128,41 @@ interface AppStore {
   // Notification reply
   notificationReplies: Record<string, string>;
   setNotificationReply: (notifId: string, reply: string) => void;
+
+  // Session restore
+  hydrated: boolean;
+  hydrate: () => void;
+  logout: () => void;
 }
 
-export const useAppStore = create<AppStore>((set) => ({
+export const useAppStore = create<AppStore>((set, get) => ({
   currentPage: 'landing',
-  setPage: (page) => set({ currentPage: page }),
+  setPage: (page) => {
+    set({ currentPage: page });
+    // Persist page only for dashboard pages (skip loading/transitions)
+    if (page === 'student-dashboard' || page === 'admin-dashboard') {
+      savePersistedState({ currentPage: page });
+    }
+  },
 
   student: null,
-  setStudent: (s) => set({ student: s }),
+  setStudent: (s) => {
+    set({ student: s });
+    if (s) {
+      savePersistedState({ student: s });
+    }
+  },
 
   isAdmin: false,
-  setAdmin: (v) => set({ isAdmin: v }),
+  setAdmin: (v) => {
+    set({ isAdmin: v });
+    savePersistedState({ isAdmin: v });
+  },
   adminEmail: '',
-  setAdminEmail: (e) => set({ adminEmail: e }),
+  setAdminEmail: (e) => {
+    set({ adminEmail: e });
+    savePersistedState({ adminEmail: e });
+  },
 
   registeredEmail: '',
   registeredStudentId: '',
@@ -135,4 +183,53 @@ export const useAppStore = create<AppStore>((set) => ({
   setNotificationReply: (notifId, reply) => set((state) => ({
     notificationReplies: { ...state.notificationReplies, [notifId]: reply }
   })),
+
+  hydrated: false,
+  hydrate: () => {
+    const persisted = loadPersistedState();
+    if (!persisted) {
+      set({ hydrated: true });
+      return;
+    }
+
+    const student = persisted.student || null;
+    const isAdmin = persisted.isAdmin || false;
+    const adminEmail = persisted.adminEmail || '';
+    const currentPage = persisted.currentPage || 'landing';
+
+    // Only restore to dashboard if there's a valid session
+    if (student && (currentPage === 'student-dashboard')) {
+      set({
+        student,
+        currentPage: 'student-dashboard',
+        hydrated: true,
+      });
+    } else if (isAdmin && adminEmail && currentPage === 'admin-dashboard') {
+      set({
+        isAdmin: true,
+        adminEmail,
+        currentPage: 'admin-dashboard',
+        hydrated: true,
+      });
+    } else {
+      // Session expired or invalid, clear and go to landing
+      clearPersistedState();
+      set({ hydrated: true });
+    }
+  },
+
+  logout: () => {
+    clearPersistedState();
+    set({
+      student: null,
+      isAdmin: false,
+      adminEmail: '',
+      grades: [],
+      payments: [],
+      notifications: [],
+      currentPage: 'landing',
+      selectedStudent: null,
+      notificationReplies: {},
+    });
+  },
 }));
