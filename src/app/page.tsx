@@ -515,7 +515,7 @@ function LandingPage() {
             </Reveal>
             <Reveal delay={0.2}>
               <div className="space-y-4">
-                <img src="/estam/IMG_1625.jpeg" alt="ESTAM" className="rounded-xl w-full h-64 object-cover border border-zinc-800" />
+                <img src="/estam/IMG_1623.jpeg" alt="ESTAM" className="rounded-xl w-full h-64 object-cover border border-zinc-800" />
                 <div className="grid grid-cols-2 gap-4">
                   <img src="/estam/IMG_1626.webp" alt="ESTAM" className="rounded-xl h-40 object-cover border border-zinc-800 w-full" />
                   <img src="/estam/IMG_1623.jpeg" alt="ESTAM" className="rounded-xl h-40 object-cover border border-zinc-800 w-full" />
