@@ -283,19 +283,20 @@ function NotificationBell() {
       {/* Notification Detail Modal */}
       <AnimatePresence>
         {selectedNotif && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/70"
-              onClick={() => setSelectedNotif(null)}
-            />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setSelectedNotif(null) }}
+          >
+            <div className="absolute inset-0 bg-black/70" onClick={() => setSelectedNotif(null)} />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden z-[61]"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6">
                 <div className="flex items-start gap-4">
@@ -309,14 +310,21 @@ function NotificationBell() {
                     <p className="text-zinc-500 text-xs mt-1">{new Date(selectedNotif.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     <Badge className="mt-2 bg-blue-500/20 text-blue-400 text-xs capitalize">{selectedNotif.type}</Badge>
                   </div>
-                  <button onClick={() => setSelectedNotif(null)} className="text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+                  <button onClick={() => setSelectedNotif(null)} className="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition flex-shrink-0">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
                 <div className="mt-4 p-4 bg-zinc-800 rounded-xl">
                   <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">{selectedNotif.message}</p>
                 </div>
+                <div className="mt-5 flex justify-end">
+                  <button onClick={() => setSelectedNotif(null)} className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition">
+                    Fermer
+                  </button>
+                </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
