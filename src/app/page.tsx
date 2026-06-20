@@ -67,7 +67,7 @@ function Reveal({ children, className = '', delay = 0 }: { children: React.React
 function MiniLoading({ targetPage }: { targetPage: Page }) {
   const setPage = useAppStore(s => s.setPage)
   useEffect(() => {
-    const t = setTimeout(() => setPage(targetPage), 7000)
+    const t = setTimeout(() => setPage(targetPage), 3000)
     return () => clearTimeout(t)
   }, [setPage, targetPage])
   return (
@@ -155,7 +155,7 @@ function LoadingPage({ targetPage }: { targetPage: Page }) {
         return p + 4
       })
     }, 60)
-    const timer = setTimeout(() => setPage(targetPage), 7000)
+    const timer = setTimeout(() => setPage(targetPage), 3000)
     return () => { clearInterval(interval); clearTimeout(timer) }
   }, [setPage, targetPage])
   return (
