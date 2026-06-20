@@ -11,6 +11,8 @@ export async function POST(req: NextRequest) {
       address, city, nationality, genre, filiereCategory, filiere, niveau, anneeScolaire
     } = body;
 
+    console.log('[REGISTER] filiereCategory:', filiereCategory, 'filiere:', filiere);
+
     if (!email || !password || !firstName || !lastName || !filiereCategory || !filiere || !niveau) {
       return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
     }

@@ -67,7 +67,7 @@ function Reveal({ children, className = '', delay = 0 }: { children: React.React
 function MiniLoading({ targetPage }: { targetPage: Page }) {
   const setPage = useAppStore(s => s.setPage)
   useEffect(() => {
-    const t = setTimeout(() => setPage(targetPage), 600)
+    const t = setTimeout(() => setPage(targetPage), 7000)
     return () => clearTimeout(t)
   }, [setPage, targetPage])
   return (
@@ -155,7 +155,7 @@ function LoadingPage({ targetPage }: { targetPage: Page }) {
         return p + 4
       })
     }, 60)
-    const timer = setTimeout(() => setPage(targetPage), 2600)
+    const timer = setTimeout(() => setPage(targetPage), 7000)
     return () => { clearInterval(interval); clearTimeout(timer) }
   }, [setPage, targetPage])
   return (
@@ -439,7 +439,7 @@ function LandingPage() {
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
         <div className="absolute inset-0">
-          <img src="/estam/IMG_1628.jpeg" alt="ESTAM Campus" className="w-full h-full object-cover opacity-30" />
+          <img src="/estam/IMG_1623.jpeg" alt="ESTAM Campus" className="w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
         </div>
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
@@ -517,7 +517,7 @@ function LandingPage() {
               <div className="space-y-4">
                 <img src="/estam/IMG_1625.jpeg" alt="ESTAM" className="rounded-xl w-full h-64 object-cover border border-zinc-800" />
                 <div className="grid grid-cols-2 gap-4">
-                  <img src="/estam/IMG_1624.jpeg" alt="ESTAM" className="rounded-xl h-40 object-cover border border-zinc-800 w-full" />
+                  <img src="/estam/IMG_1626.webp" alt="ESTAM" className="rounded-xl h-40 object-cover border border-zinc-800 w-full" />
                   <img src="/estam/IMG_1623.jpeg" alt="ESTAM" className="rounded-xl h-40 object-cover border border-zinc-800 w-full" />
                 </div>
               </div>
@@ -601,7 +601,7 @@ function LandingPage() {
           </div>
           <Reveal delay={0.3}>
             <div className="text-center mt-10">
-              <img src="/estam/IMG_1626.png" alt="ESTAM Document" className="mx-auto rounded-xl max-h-64 border border-zinc-800 object-contain" />
+              <img src="/estam/IMG_1626.webp" alt="ESTAM Document" className="mx-auto rounded-xl max-h-64 border border-zinc-800 object-contain" />
             </div>
           </Reveal>
         </div>
@@ -1035,7 +1035,7 @@ function StudentDashboard() {
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-4 border-b border-zinc-800">
-          <button onClick={() => setPage('landing')} className="flex items-center gap-3 hover:opacity-80 transition">
+          <button onClick={() => setPage('student-dashboard')} className="flex items-center gap-3 hover:opacity-80 transition">
             <img src={LOGO} alt="ESTAM" className="w-10 h-10 rounded-lg object-contain" />
             <div>
               <p className="text-blue-500 font-bold text-sm">ESTAM</p>
@@ -1323,6 +1323,11 @@ function AdminDashboard() {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
+  const toggleSelectAll = () => {
+    const allIds = students.map(s => (s as Record<string, string>).id)
+    setSelectedIds(prev => prev.length === allIds.length ? [] : allIds)
+  }
+
   const openStudent = async (studentId: string) => {
     try {
       const res = await fetch(`/api/students/by-studentid?studentId=${studentId}`)
@@ -1391,7 +1396,7 @@ function AdminDashboard() {
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-4 border-b border-zinc-800">
-          <button onClick={() => setPage('landing')} className="flex items-center gap-3 hover:opacity-80 transition">
+          <button onClick={() => setPage('admin-dashboard')} className="flex items-center gap-3 hover:opacity-80 transition">
             <img src={LOGO} alt="ESTAM" className="w-10 h-10 rounded-lg object-contain" />
             <div>
               <p className="text-blue-500 font-bold text-sm">ESTAM Admin</p>
@@ -1520,13 +1525,18 @@ function AdminDashboard() {
                     <p className="text-zinc-500 text-sm text-center py-12">Aucun étudiant trouvé dans cette filière</p>
                   ) : (
                     <>
-                    {selectedIds.length > 0 && (
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-zinc-400 text-sm">{selectedIds.length} sélectionné(s)</span>
-                        <Button variant="destructive" size="sm" className="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs h-8" onClick={(e) => { e.stopPropagation(); deleteStudents(selectedIds) }}><Trash2 className="w-3 h-3 mr-1" />Supprimer</Button>
-                        <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-400 text-xs h-8" onClick={() => { if (confirm('Supprimer TOUS les étudiants de cette filière ?')) deleteStudents(students.map(s => (s as Record<string, string>).id)) }}><Trash2 className="w-3 h-3 mr-1" />Tous supprimer</Button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3 mb-2">
+                      <button onClick={toggleSelectAll} className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition ${selectedIds.length === students.length && students.length > 0 ? 'bg-blue-600 border-blue-600' : 'border-zinc-600 hover:border-zinc-400'}`}>
+                        {selectedIds.length === students.length && students.length > 0 && <Check className="w-3 h-3 text-white" />}
+                      </button>
+                      <span className="text-zinc-400 text-xs">Tout sélectionner</span>
+                      {selectedIds.length > 0 && (
+                        <>
+                          <span className="text-zinc-500 text-xs">({selectedIds.length} sélectionné{selectedIds.length > 1 ? 's' : ''})</span>
+                          <Button variant="destructive" size="sm" className="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs h-8 ml-auto" onClick={() => deleteStudents(selectedIds)}><Trash2 className="w-3 h-3 mr-1" />Supprimer</Button>
+                        </>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {students.map(s => {
                         const st = s as Record<string, string>

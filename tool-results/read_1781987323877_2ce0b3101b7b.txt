@@ -1,0 +1,1766 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useRef, type FormEvent } from 'react'
+     4→import { motion, useInView, AnimatePresence } from 'framer-motion'
+     5→import { useAppStore, type Page, type Student, type Grade, type Payment, type Notification } from '@/store/appStore'
+     6→import { Button } from '@/components/ui/button'
+     7→import { Input } from '@/components/ui/input'
+     8→import { Label } from '@/components/ui/label'
+     9→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+    10→import { Badge } from '@/components/ui/badge'
+    11→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    12→import { Separator } from '@/components/ui/separator'
+    13→import { Progress } from '@/components/ui/progress'
+    14→import QRCode from 'qrcode'
+    15→import {
+    16→  GraduationCap, BookOpen, Users, Bell, LogOut, Settings, Search,
+    17→  User, Mail, Lock, Phone, MapPin, Calendar, ChevronRight, Award,
+    18→  CreditCard, CheckCircle2, XCircle, AlertCircle, Eye, EyeOff,
+    19→  Menu, X, ArrowLeft, Building2, BarChart3, FileText, Shield,
+    20→  Trash2, Send, Edit3, Save, Check, Megaphone, Clock, Loader2,
+    21→  Download, QrCode, MessageSquare, UsersRound, Globe, Camera
+    22→} from 'lucide-react'
+    23→
+    24→// ─── Data Constants ───
+    25→const FILIERES: Record<string, string[]> = {
+    26→  Gestion: [
+    27→    'Comptabilité et Gestion',
+    28→    'Finance, Banque et Assurances',
+    29→    'Marketing et Action Commerciale',
+    30→    'Gestion des Ressources Humaines',
+    31→    'Gestion Commerciale',
+    32→    'Transport et Logistique',
+    33→    'Communication et Marketing',
+    34→  ],
+    35→  Technologie: [
+    36→    'Génie Civil',
+    37→    'Génie Électrique',
+    38→    'Informatique de Gestion',
+    39→    'Réseaux Informatiques et Télécommunications',
+    40→    'Audit Sécurité et Systèmes des Réseaux Informatiques',
+    41→    'Informatique Industriel et Maintenance',
+    42→  ],
+    43→}
+    44→
+    45→const MOIS = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Septembre']
+    46→
+    47→const LOGO = '/estam/IMG_1693.png'
+    48→
+    49→// ─── Reveal Animation Wrapper ───
+    50→function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+    51→  const ref = useRef(null)
+    52→  const isInView = useInView(ref, { once: true, margin: '-50px' })
+    53→  return (
+    54→    <motion.div
+    55→      ref={ref}
+    56→      initial={{ opacity: 0, y: 40 }}
+    57→      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+    58→      transition={{ duration: 0.6, delay, ease: 'easeOut' }}
+    59→      className={className}
+    60→    >
+    61→      {children}
+    62→    </motion.div>
+    63→  )
+    64→}
+    65→
+    66→// ─── Mini Loading (brief transition) ───
+    67→function MiniLoading({ targetPage }: { targetPage: Page }) {
+    68→  const setPage = useAppStore(s => s.setPage)
+    69→  useEffect(() => {
+    70→    const t = setTimeout(() => setPage(targetPage), 600)
+    71→    return () => clearTimeout(t)
+    72→  }, [setPage, targetPage])
+    73→  return (
+    74→    <div className="min-h-screen flex flex-col items-center justify-center bg-black">
+    75→      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}>
+    76→        <Loader2 className="w-10 h-10 text-blue-500" />
+    77→      </motion.div>
+    78→      <p className="mt-4 text-zinc-400 text-sm">Chargement...</p>
+    79→    </div>
+    80→  )
+    81→}
+    82→
+    83→// ─── Step-by-Step Loading Page (after verification) ───
+    84→function VerificationStepsPage() {
+    85→  const setPage = useAppStore(s => s.setPage)
+    86→  const [step, setStep] = useState(0)
+    87→  const steps = [
+    88→    { icon: CheckCircle2, label: 'Vérification du code...' },
+    89→    { icon: Users, label: 'Activation du compte...' },
+    90→    { icon: GraduationCap, label: 'Configuration de l\'espace étudiant...' },
+    91→    { icon: BarChart3, label: 'Redirection vers la connexion...' },
+    92→  ]
+    93→
+    94→  useEffect(() => {
+    95→    const timers = steps.map((_, i) =>
+    96→      setTimeout(() => setStep(i), i * 800)
+    97→    )
+    98→    const finalTimer = setTimeout(() => setPage('login'), steps.length * 800 + 600)
+    99→    return () => { timers.forEach(clearTimeout); clearTimeout(finalTimer) }
+   100→  }, [])
+   101→
+   102→  return (
+   103→    <div className="min-h-screen flex flex-col items-center justify-center bg-black px-4">
+   104→      <img src={LOGO} alt="ESTAM" className="w-20 h-20 mx-auto mb-8 rounded-xl object-contain" />
+   105→      <div className="w-full max-w-sm space-y-4">
+   106→        {steps.map((s, i) => {
+   107→          const Icon = s.icon
+   108→          const active = i === step
+   109→          const done = i < step
+   110→          return (
+   111→            <motion.div
+   112→              key={i}
+   113→              initial={{ opacity: 0, x: -20 }}
+   114→              animate={{ opacity: 1, x: 0 }}
+   115→              transition={{ delay: i * 0.1 }}
+   116→              className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-500 ${
+   117→                active ? 'bg-blue-600/10 border border-blue-500/30' : done ? 'bg-green-500/5 border border-green-500/10' : 'bg-zinc-900/50 border border-zinc-800/50'
+   118→              }`}
+   119→            >
+   120→              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+   121→                active ? 'bg-blue-600' : done ? 'bg-green-500' : 'bg-zinc-800'
+   122→              }`}>
+   123→                {done ? (
+   124→                  <Check className="w-5 h-5 text-white" />
+   125→                ) : active ? (
+   126→                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}>
+   127→                    <Icon className="w-5 h-5 text-white" />
+   128→                  </motion.div>
+   129→                ) : (
+   130→                  <span className="text-zinc-600 text-sm font-bold">{i + 1}</span>
+   131→                )}
+   132→              </div>
+   133→              <div>
+   134→                <p className={`text-sm font-medium ${active ? 'text-blue-400' : done ? 'text-green-400' : 'text-zinc-600'}`}>{s.label}</p>
+   135→              </div>
+   136→              {done && <CheckCircle2 className="w-5 h-5 text-green-400 ml-auto" />}
+   137→              {active && <Loader2 className="w-5 h-5 text-blue-400 ml-auto animate-spin" />}
+   138→            </motion.div>
+   139→          )
+   140→        })}
+   141→      </div>
+   142→      <p className="shimmer-blue text-lg font-bold mt-8 tracking-wider">ESTAM</p>
+   143→    </div>
+   144→  )
+   145→}
+   146→
+   147→// ─── Loading Page (for login transition) ───
+   148→function LoadingPage({ targetPage }: { targetPage: Page }) {
+   149→  const setPage = useAppStore(s => s.setPage)
+   150→  const [progress, setProgress] = useState(0)
+   151→  useEffect(() => {
+   152→    const interval = setInterval(() => {
+   153→      setProgress(p => {
+   154→        if (p >= 100) { clearInterval(interval); return 100 }
+   155→        return p + 4
+   156→      })
+   157→    }, 60)
+   158→    const timer = setTimeout(() => setPage(targetPage), 2600)
+   159→    return () => { clearInterval(interval); clearTimeout(timer) }
+   160→  }, [setPage, targetPage])
+   161→  return (
+   162→    <div className="min-h-screen flex flex-col items-center justify-center bg-black">
+   163→      <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
+   164→        <GraduationCap className="w-16 h-16 text-blue-500" />
+   165→      </motion.div>
+   166→      <p className="mt-6 shimmer-blue text-2xl font-bold tracking-wider">ESTAM</p>
+   167→      <p className="text-zinc-400 text-sm mt-2">Chargement de votre espace...</p>
+   168→      <div className="w-64 mt-6">
+   169→        <Progress value={progress} className="h-2 bg-zinc-800 [&>div]:bg-blue-500" />
+   170→      </div>
+   171→    </div>
+   172→  )
+   173→}
+   174→
+   175→// ─── Notification Bell Popover ───
+   176→function NotificationBell() {
+   177→  const { notifications, setNotifications } = useAppStore()
+   178→  const [open, setOpen] = useState(false)
+   179→  const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null)
+   180→  const unreadCount = notifications.filter(n => !n.lu).length
+   181→
+   182→  const markRead = async (id: string) => {
+   183→    await fetch('/api/notifications', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notificationId: id }) })
+   184→    setNotifications(notifications.map(n => n.id === id ? { ...n, lu: true } : n))
+   185→  }
+   186→
+   187→  const handleOpen = (notif: Notification) => {
+   188→    if (!notif.lu) markRead(notif.id)
+   189→    setSelectedNotif(notif)
+   190→  }
+   191→
+   192→  return (
+   193→    <>
+   194→      <button
+   195→        onClick={() => setOpen(!open)}
+   196→        className="relative p-2 rounded-lg hover:bg-zinc-800 transition"
+   197→      >
+   198→        <Bell className="w-5 h-5 text-zinc-400" />
+   199→        {unreadCount > 0 && (
+   200→          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+   201→            {unreadCount > 9 ? '9+' : unreadCount}
+   202→          </span>
+   203→        )}
+   204→      </button>
+   205→
+   206→      <AnimatePresence>
+   207→        {open && (
+   208→          <>
+   209→            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+   210→            <div className="notif-popup absolute right-0 top-full mt-2 w-80 sm:w-96 max-h-[70vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
+   211→              <div className="p-3 border-b border-zinc-800 flex items-center justify-between">
+   212→                <h3 className="text-white font-semibold text-sm">Notifications</h3>
+   213→                <span className="text-zinc-500 text-xs">{unreadCount} non lue(s)</span>
+   214→              </div>
+   215→              <div className="flex-1 overflow-y-auto">
+   216→                {notifications.length === 0 ? (
+   217→                  <div className="p-8 text-center text-zinc-500 text-sm">Aucune notification</div>
+   218→                ) : (
+   219→                  notifications.map(n => (
+   220→                    <button
+   221→                      key={n.id}
+   222→                      onClick={() => handleOpen(n)}
+   223→                      className={`w-full text-left p-3 border-b border-zinc-800/50 hover:bg-zinc-800/50 transition ${!n.lu ? 'bg-blue-600/5' : ''}`}
+   224→                    >
+   225→                      <div className="flex items-start gap-3">
+   226→                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+   227→                          n.type === 'note' ? 'bg-blue-500/20' : n.type === 'paiement' ? 'bg-green-500/20' : 'bg-blue-500/20'
+   228→                        }`}>
+   229→                          {n.type === 'note' ? <BookOpen className="w-4 h-4 text-blue-400" /> : n.type === 'paiement' ? <CreditCard className="w-4 h-4 text-green-400" /> : <Bell className="w-4 h-4 text-blue-400" />}
+   230→                        </div>
+   231→                        <div className="flex-1 min-w-0">
+   232→                          <div className="flex items-center gap-2">
+   233→                            <p className="text-white text-sm font-medium truncate">{n.titre}</p>
+   234→                            {!n.lu && <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
+   235→                          </div>
+   236→                          <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{n.message}</p>
+   237→                          <p className="text-zinc-600 text-[10px] mt-1">{new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
+   238→                        </div>
+   239→                      </div>
+   240→                    </button>
+   241→                  ))
+   242→                )}
+   243→              </div>
+   244→            </div>
+   245→          </>
+   246→        )}
+   247→      </AnimatePresence>
+   248→
+   249→      {/* Notification Detail Modal */}
+   250→      <AnimatePresence>
+   251→        {selectedNotif && (
+   252→          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+   253→            <motion.div
+   254→              initial={{ opacity: 0 }}
+   255→              animate={{ opacity: 1 }}
+   256→              exit={{ opacity: 0 }}
+   257→              className="absolute inset-0 bg-black/70"
+   258→              onClick={() => setSelectedNotif(null)}
+   259→            />
+   260→            <motion.div
+   261→              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+   262→              animate={{ opacity: 1, scale: 1, y: 0 }}
+   263→              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+   264→              className="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden"
+   265→            >
+   266→              <div className="p-6">
+   267→                <div className="flex items-start gap-4">
+   268→                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+   269→                    selectedNotif.type === 'note' ? 'bg-blue-500/20' : selectedNotif.type === 'paiement' ? 'bg-green-500/20' : 'bg-blue-500/20'
+   270→                  }`}>
+   271→                    {selectedNotif.type === 'note' ? <BookOpen className="w-6 h-6 text-blue-400" /> : selectedNotif.type === 'paiement' ? <CreditCard className="w-6 h-6 text-green-400" /> : <Bell className="w-6 h-6 text-blue-400" />}
+   272→                  </div>
+   273→                  <div className="flex-1">
+   274→                    <h3 className="text-white font-semibold text-lg">{selectedNotif.titre}</h3>
+   275→                    <p className="text-zinc-500 text-xs mt-1">{new Date(selectedNotif.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+   276→                    <Badge className="mt-2 bg-blue-500/20 text-blue-400 text-xs capitalize">{selectedNotif.type}</Badge>
+   277→                  </div>
+   278→                  <button onClick={() => setSelectedNotif(null)} className="text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+   279→                </div>
+   280→                <div className="mt-4 p-4 bg-zinc-800 rounded-xl">
+   281→                  <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">{selectedNotif.message}</p>
+   282→                </div>
+   283→              </div>
+   284→            </motion.div>
+   285→          </div>
+   286→        )}
+   287→      </AnimatePresence>
+   288→    </>
+   289→  )
+   290→}
+   291→
+   292→// ─── Generate PDF ───
+   293→async function generateStudentPDF(studentData: Record<string, unknown>) {
+   294→  const { default: jsPDF } = await import('jspdf')
+   295→  const doc = new jsPDF()
+   296→  const s = studentData
+   297→
+   298→  // Header
+   299→  doc.setFillColor(37, 99, 235)
+   300→  doc.rect(0, 0, 210, 40, 'F')
+   301→  doc.setTextColor(255, 255, 255)
+   302→  doc.setFontSize(20)
+   303→  doc.text('ESTAM', 15, 20)
+   304→  doc.setFontSize(10)
+   305→  doc.text('Ecole Superieure des Technologies Avancees et de Management', 15, 30)
+   306→
+   307→  // Student Info
+   308→  doc.setTextColor(0, 0, 0)
+   309→  doc.setFontSize(16)
+   310→  doc.text('Fiche Etudiant', 15, 55)
+   311→
+   312→  doc.setFontSize(11)
+   313→  const fields = [
+   314→    ['Identifiant', String(s.studentId || '-')],
+   315→    ['Nom complet', `${String(s.firstName || '')} ${String(s.lastName || '')}`],
+   316→    ['Email', String(s.email || '-')],
+   317→    ['Telephone', String(s.phone || '-')],
+   318→    ['Ville', String(s.city || '-')],
+   319→    ['Nationalite', String(s.nationality || '-')],
+   320→    ['Genre', String(s.genre === 'M' ? 'Masculin' : s.genre === 'F' ? 'Feminin' : '-')],
+   321→    ['Date de naissance', String(s.dateOfBirth || '-')],
+   322→    ['Adresse', String(s.address || '-')],
+   323→    ['Filiere', String(s.filiere || '-')],
+   324→    ['Domaine', String(s.filiereCategory || '-')],
+   325→    ['Niveau', String(s.niveau || '-')],
+   326→    ['Annee scolaire', String(s.anneeScolaire || '-')],
+   327→    ['Statut', String(s.status || '-')],
+   328→    ['Verifie', String(s.verified === true ? 'Oui' : 'Non')],
+   329→  ]
+   330→
+   331→  let y = 65
+   332→  for (const [label, value] of fields) {
+   333→    doc.setFont(undefined, 'bold')
+   334→    doc.setTextColor(80, 80, 80)
+   335→    doc.text(`${label} :`, 15, y)
+   336→    doc.setFont(undefined, 'normal')
+   337→    doc.setTextColor(0, 0, 0)
+   338→    doc.text(value, 75, y)
+   339→    y += 10
+   340→  }
+   341→
+   342→  // Grades
+   343→  const grades = (s.grades as Record<string, string>[]) || []
+   344→  if (grades.length > 0) {
+   345→    y += 5
+   346→    doc.setFontSize(14)
+   347→    doc.setTextColor(37, 99, 235)
+   348→    doc.text('Notes', 15, y)
+   349→    y += 8
+   350→    doc.setFontSize(9)
+   351→    doc.setTextColor(100, 100, 100)
+   352→    doc.text('Matiere', 15, y)
+   353→    doc.text('Type', 80, y)
+   354→    doc.text('Note', 120, y)
+   355→    doc.text('Semestre', 150, y)
+   356→    y += 2
+   357→    doc.setDrawColor(200, 200, 200)
+   358→    doc.line(15, y, 195, y)
+   359→    y += 6
+   360→    doc.setTextColor(0, 0, 0)
+   361→    doc.setFontSize(10)
+   362→    for (const g of grades) {
+   363→      if (y > 270) { doc.addPage(); y = 20 }
+   364→      doc.text(String(g.matiere || ''), 15, y)
+   365→      doc.text(String(g.type || ''), 80, y)
+   366→      doc.text(String(g.note || ''), 120, y)
+   367→      doc.text(String(g.semestre || ''), 150, y)
+   368→      y += 8
+   369→    }
+   370→  }
+   371→
+   372→  // Payments
+   373→  const payments = (s.payments as Record<string, string>[]) || []
+   374→  if (payments.length > 0) {
+   375→    y += 10
+   376→    if (y > 250) { doc.addPage(); y = 20 }
+   377→    doc.setFontSize(14)
+   378→    doc.setTextColor(37, 99, 235)
+   379→    doc.text('Paiements', 15, y)
+   380→    y += 8
+   381→    doc.setFontSize(9)
+   382→    doc.setTextColor(100, 100, 100)
+   383→    doc.text('Mois', 15, y)
+   384→    doc.text('Montant', 80, y)
+   385→    doc.text('Statut', 120, y)
+   386→    doc.text('Date', 160, y)
+   387→    y += 2
+   388→    doc.line(15, y, 195, y)
+   389→    y += 6
+   390→    doc.setTextColor(0, 0, 0)
+   391→    doc.setFontSize(10)
+   392→    for (const p of payments) {
+   393→      if (y > 270) { doc.addPage(); y = 20 }
+   394→      doc.text(String(p.mois || ''), 15, y)
+   395→      doc.text(`${Number(p.montant || 0).toLocaleString()} FCFA`, 80, y)
+   396→      doc.text(String(p.statut === 'paye' ? 'Paye' : 'Impaye'), 120, y)
+   397→      doc.text(String(p.datePaiement || '-'), 160, y)
+   398→      y += 8
+   399→    }
+   400→  }
+   401→
+   402→  // Footer
+   403→  const pageCount = doc.getNumberOfPages()
+   404→  for (let i = 1; i <= pageCount; i++) {
+   405→    doc.setPage(i)
+   406→    doc.setFontSize(8)
+   407→    doc.setTextColor(150, 150, 150)
+   408→    doc.text(`ESTAM Congo - Fiche etudiante - Genere le ${new Date().toLocaleDateString('fr-FR')}`, 15, 290)
+   409→    doc.text(`Page ${i}/${pageCount}`, 180, 290)
+   410→  }
+   411→
+   412→  doc.save(`ESTAM_${String(s.studentId || 'etudiant')}.pdf`)
+   413→}
+   414→
+   415→// ─── Landing Page ───
+   416→function LandingPage() {
+   417→  const setPage = useAppStore(s => s.setPage)
+   418→  return (
+   419→    <div className="min-h-screen bg-black">
+   420→      {/* Navbar */}
+   421→      <nav className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-zinc-800">
+   422→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+   423→          <button onClick={() => setPage('landing')} className="flex items-center gap-3 hover:opacity-80 transition">
+   424→            <img src={LOGO} alt="ESTAM" className="h-10 w-10 rounded-lg object-cover" />
+   425→            <span className="text-blue-500 font-bold text-xl tracking-wider">ESTAM</span>
+   426→          </button>
+   427→          <div className="hidden md:flex items-center gap-6">
+   428→            <button onClick={() => document.getElementById('apropos')?.scrollIntoView({ behavior: 'smooth' })} className="text-zinc-300 hover:text-blue-400 transition text-sm">À propos</button>
+   429→            <button onClick={() => document.getElementById('filieres')?.scrollIntoView({ behavior: 'smooth' })} className="text-zinc-300 hover:text-blue-400 transition text-sm">Filières</button>
+   430→            <button onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })} className="text-zinc-300 hover:text-blue-400 transition text-sm">Contact</button>
+   431→          </div>
+   432→          <div className="flex items-center gap-3">
+   433→            <Button variant="outline" className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white text-sm" onClick={() => setPage('mini-login')}>Connexion</Button>
+   434→            <Button className="bg-blue-600 text-white hover:bg-blue-700 text-sm" onClick={() => setPage('mini-register')}>S&apos;inscrire</Button>
+   435→          </div>
+   436→        </div>
+   437→      </nav>
+   438→
+   439→      {/* Hero */}
+   440→      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+   441→        <div className="absolute inset-0">
+   442→          <img src="/estam/IMG_1628.jpeg" alt="ESTAM Campus" className="w-full h-full object-cover opacity-30" />
+   443→          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
+   444→        </div>
+   445→        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+   446→          <Reveal>
+   447→            <img src={LOGO} alt="ESTAM Logo" className="w-28 h-28 mx-auto rounded-2xl border-4 border-blue-500/30 mb-6 object-contain" />
+   448→          </Reveal>
+   449→          <Reveal delay={0.1}>
+   450→            <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4">
+   451→              <span className="shimmer-blue text-4xl sm:text-6xl font-bold">ESTAM</span>
+   452→            </h1>
+   453→          </Reveal>
+   454→          <Reveal delay={0.2}>
+   455→            <p className="text-lg sm:text-xl text-zinc-300 mb-2">École Supérieure des Technologies Avancées et de Management</p>
+   456→          </Reveal>
+   457→          <Reveal delay={0.3}>
+   458→            <p className="shimmer-text text-blue-400 font-semibold italic text-lg mb-8">&laquo; Une formation, un métier, une réussite &raquo;</p>
+   459→          </Reveal>
+   460→          <Reveal delay={0.4}>
+   461→            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+   462→              <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 text-base px-8 py-6" onClick={() => setPage('mini-register')}>
+   463→                <GraduationCap className="w-5 h-5 mr-2" /> S&apos;inscrire maintenant
+   464→              </Button>
+   465→              <Button size="lg" variant="outline" className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white text-base px-8 py-6" onClick={() => setPage('mini-login')}>
+   466→                <LogIn className="w-5 h-5 mr-2" /> Se connecter
+   467→              </Button>
+   468→            </div>
+   469→          </Reveal>
+   470→        </div>
+   471→        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+   472→          <ChevronRight className="w-6 h-6 text-blue-500 rotate-90" />
+   473→        </div>
+   474→      </section>
+   475→
+   476→      {/* About Section */}
+   477→      <section id="apropos" className="py-20 px-4">
+   478→        <div className="max-w-6xl mx-auto">
+   479→          <Reveal>
+   480→            <h2 className="shimmer-blue text-3xl sm:text-4xl font-bold text-center text-white mb-4">À propos de l&apos;ESTAM</h2>
+   481→            <div className="w-20 h-1 bg-blue-600 mx-auto mb-12" />
+   482→          </Reveal>
+   483→          <div className="grid md:grid-cols-2 gap-12 items-center">
+   484→            <Reveal delay={0.1}>
+   485→              <div className="space-y-6">
+   486→                <p className="text-zinc-300 leading-relaxed text-base">
+   487→                  L&apos;<strong className="text-blue-400">École Supérieure des Technologies Avancées et de Management (ESTAM)</strong> est un établissement d&apos;enseignement supérieur privé situé en <strong className="text-white">République du Congo</strong>, avec des campus à <strong className="text-white">Brazzaville</strong> et <strong className="text-white">Pointe-Noire</strong>. Créée par arrêté <strong className="text-blue-400">N° 0076/MES-CAB-DGESUP</strong>, l&apos;ESTAM travaille en étroite collaboration avec l&apos;Université CEREC-ISCOM.
+   488→                </p>
+   489→                <p className="text-zinc-300 leading-relaxed text-base">
+   490→                  L&apos;ESTAM a pour mission d&apos;offrir des programmes d&apos;études innovants, une formation professionnelle et personnelle de qualité, axée sur l&apos;excellence, l&apos;innovation et l&apos;inclusion. Elle prépare les étudiants aux défis du monde professionnel à travers des formations en <strong className="text-white">Gestion</strong> et en <strong className="text-white">Technologie</strong>.
+   491→                </p>
+   492→                <div className="grid grid-cols-2 gap-4 pt-4">
+   493→                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
+   494→                    <BookOpen className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+   495→                    <p className="text-2xl font-bold text-white">9+</p>
+   496→                    <p className="text-zinc-400 text-sm">Filières</p>
+   497→                  </div>
+   498→                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
+   499→                    <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+   500→                    <p className="text-2xl font-bold text-white">2</p>
+   501→                    <p className="text-zinc-400 text-sm">Campus</p>
+   502→                  </div>
+   503→                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
+   504→                    <Award className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+   505→                    <p className="text-2xl font-bold text-white">Licence</p>
+   506→                    <p className="text-zinc-400 text-sm">Diplôme</p>
+   507→                  </div>
+   508→                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
+   509→                    <Building2 className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+   510→                    <p className="text-2xl font-bold text-white">CEREC</p>
+   511→                    <p className="text-zinc-400 text-sm">Partenaire</p>
+   512→                  </div>
+   513→                </div>
+   514→              </div>
+   515→            </Reveal>
+   516→            <Reveal delay={0.2}>
+   517→              <div className="space-y-4">
+   518→                <img src="/estam/IMG_1625.jpeg" alt="ESTAM" className="rounded-xl w-full h-64 object-cover border border-zinc-800" />
+   519→                <div className="grid grid-cols-2 gap-4">
+   520→                  <img src="/estam/IMG_1624.jpeg" alt="ESTAM" className="rounded-xl h-40 object-cover border border-zinc-800 w-full" />
+   521→                  <img src="/estam/IMG_1623.jpeg" alt="ESTAM" className="rounded-xl h-40 object-cover border border-zinc-800 w-full" />
+   522→                </div>
+   523→              </div>
+   524→            </Reveal>
+   525→          </div>
+   526→        </div>
+   527→      </section>
+   528→
+   529→      {/* Filières Section */}
+   530→      <section id="filieres" className="py-20 px-4 bg-zinc-950">
+   531→        <div className="max-w-6xl mx-auto">
+   532→          <Reveal>
+   533→            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-4">Nos Filières</h2>
+   534→            <div className="w-20 h-1 bg-blue-600 mx-auto mb-4" />
+   535→            <p className="text-zinc-400 text-center max-w-2xl mx-auto mb-12">Des formations professionnelles en Licence dans les domaines de la Gestion et de la Technologie</p>
+   536→          </Reveal>
+   537→          {Object.entries(FILIERES).map(([category, fils], idx) => (
+   538→            <Reveal key={category} delay={idx * 0.2}>
+   539→              <div className="mb-12">
+   540→                <div className="flex items-center gap-3 mb-6">
+   541→                  <div className="w-12 h-12 rounded-lg bg-blue-600/10 flex items-center justify-center">
+   542→                    {category === 'Gestion' ? <BarChart3 className="w-6 h-6 text-blue-500" /> : <Settings className="w-6 h-6 text-blue-500" />}
+   543→                  </div>
+   544→                  <h3 className="text-2xl font-bold text-white">{category}</h3>
+   545→                </div>
+   546→                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   547→                  {fils.map((f, i) => (
+   548→                    <motion.div
+   549→                      key={f}
+   550→                      whileHover={{ scale: 1.03, borderColor: 'rgb(37, 99, 235)' }}
+   551→                      className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 cursor-default transition-all"
+   552→                    >
+   553→                      <div className="flex items-start gap-3">
+   554→                        <div className="w-8 h-8 rounded bg-blue-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+   555→                          <span className="text-blue-400 text-sm font-bold">{i + 1}</span>
+   556→                        </div>
+   557→                        <div>
+   558→                          <h4 className="text-white font-semibold text-sm">{f}</h4>
+   559→                          <p className="text-zinc-500 text-xs mt-1">Licence 3 ans</p>
+   560→                        </div>
+   561→                      </div>
+   562→                    </motion.div>
+   563→                  ))}
+   564→                </div>
+   565→              </div>
+   566→            </Reveal>
+   567→          ))}
+   568→        </div>
+   569→      </section>
+   570→
+   571→      {/* Inscription Info */}
+   572→      <section className="py-20 px-4">
+   573→        <div className="max-w-4xl mx-auto">
+   574→          <Reveal>
+   575→            <h2 className="shimmer-blue text-3xl sm:text-4xl font-bold text-center text-white mb-4">Inscription</h2>
+   576→            <div className="w-20 h-1 bg-blue-600 mx-auto mb-12" />
+   577→          </Reveal>
+   578→          <div className="grid sm:grid-cols-2 gap-6">
+   579→            <Reveal delay={0.1}>
+   580→              <Card className="bg-zinc-900 border-zinc-800">
+   581→                <CardHeader>
+   582→                  <CardTitle className="text-blue-400 flex items-center gap-2"><FileText className="w-5 h-5" /> Nouvelle inscription</CardTitle>
+   583→                </CardHeader>
+   584→                <CardContent>
+   585→                  <p className="text-zinc-300 text-sm">Frais d&apos;inscription : <span className="text-blue-400 font-bold text-lg">26 000 FCFA</span></p>
+   586→                  <p className="text-zinc-400 text-xs mt-2">Ouvert lun-ven 8h-17h, sam 8h-12h</p>
+   587→                </CardContent>
+   588→              </Card>
+   589→            </Reveal>
+   590→            <Reveal delay={0.2}>
+   591→              <Card className="bg-zinc-900 border-zinc-800">
+   592→                <CardHeader>
+   593→                  <CardTitle className="text-blue-400 flex items-center gap-2"><Clock className="w-5 h-5" /> Cours du soir</CardTitle>
+   594→                </CardHeader>
+   595→                <CardContent>
+   596→                  <p className="text-zinc-300 text-sm">Vague Soir : <span className="shimmer-blue font-bold text-lg">Disponible</span></p>
+   597→                  <p className="text-zinc-400 text-xs mt-2">Pour les travailleurs, cours du soir aménagés</p>
+   598→                </CardContent>
+   599→              </Card>
+   600→            </Reveal>
+   601→          </div>
+   602→          <Reveal delay={0.3}>
+   603→            <div className="text-center mt-10">
+   604→              <img src="/estam/IMG_1626.png" alt="ESTAM Document" className="mx-auto rounded-xl max-h-64 border border-zinc-800 object-contain" />
+   605→            </div>
+   606→          </Reveal>
+   607→        </div>
+   608→      </section>
+   609→
+   610→      {/* Contact Section */}
+   611→      <section id="contact" className="py-20 px-4 bg-zinc-950">
+   612→        <div className="max-w-4xl mx-auto">
+   613→          <Reveal>
+   614→            <h2 className="shimmer-blue text-3xl sm:text-4xl font-bold text-center text-white mb-4">Contact</h2>
+   615→            <div className="w-20 h-1 bg-blue-600 mx-auto mb-12" />
+   616→          </Reveal>
+   617→          <div className="grid sm:grid-cols-2 gap-6">
+   618→            <Reveal delay={0.1}>
+   619→              <Card className="bg-zinc-900 border-zinc-800">
+   620→                <CardHeader>
+   621→                  <CardTitle className="text-white text-lg">Brazzaville</CardTitle>
+   622→                </CardHeader>
+   623→                <CardContent className="space-y-3">
+   624→                  <p className="text-zinc-300 text-sm flex items-start gap-2"><MapPin className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" /> 233 Rue de la Libération / 22 Rue Likouala, Poto-Poto</p>
+   625→                  <p className="text-zinc-300 text-sm flex items-start gap-2"><Phone className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" /> +242 06 822 91 78</p>
+   626→                  <p className="text-zinc-300 text-sm flex items-start gap-2"><Phone className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" /> +242 05 557 58 32 (WhatsApp)</p>
+   627→                </CardContent>
+   628→              </Card>
+   629→            </Reveal>
+   630→            <Reveal delay={0.2}>
+   631→              <Card className="bg-zinc-900 border-zinc-800">
+   632→                <CardHeader>
+   633→                  <CardTitle className="text-white text-lg">Pointe-Noire</CardTitle>
+   634→                </CardHeader>
+   635→                <CardContent className="space-y-3">
+   636→                  <p className="text-zinc-300 text-sm flex items-start gap-2"><MapPin className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" /> 82 Avenue Nelson Mandela, rd-pt ILAMA</p>
+   637→                  <p className="text-zinc-300 text-sm flex items-start gap-2"><Mail className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" /> info@estamuni.net</p>
+   638→                  <p className="text-zinc-300 text-sm flex items-start gap-2"><Globe className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" /> estam.cg</p>
+   639→                </CardContent>
+   640→              </Card>
+   641→            </Reveal>
+   642→          </div>
+   643→          <Reveal delay={0.3}>
+   644→            <div className="mt-10 text-center">
+   645→              <img src="/estam/IMG_1625.jpeg" alt="ESTAM Campus" className="mx-auto rounded-xl max-h-72 object-cover border border-zinc-800 w-full" />
+   646→            </div>
+   647→          </Reveal>
+   648→        </div>
+   649→      </section>
+   650→
+   651→      {/* Footer */}
+   652→      <footer className="border-t border-zinc-800 py-8 px-4">
+   653→        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+   654→          <div className="flex items-center gap-3">
+   655→            <img src={LOGO} alt="ESTAM" className="w-8 h-8 rounded-lg object-cover" />
+   656→            <span className="text-blue-500 font-bold">ESTAM</span>
+   657→          </div>
+   658→          <p className="text-zinc-500 text-xs text-center">
+   659→            © {new Date().getFullYear()} École Supérieure des Technologies Avancées et de Management. Tous droits réservés.
+   660→          </p>
+   661→          <div className="flex items-center gap-2">
+   662→            <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-blue-400 text-xs" onClick={() => setPage('mini-admin-login')}>
+   663→              <Shield className="w-3 h-3 mr-1" /> Administration
+   664→            </Button>
+   665→          </div>
+   666→        </div>
+   667→      </footer>
+   668→    </div>
+   669→  )
+   670→}
+   671→
+   672→// ─── Login Icon ───
+   673→function LogIn({ className }: { className?: string }) {
+   674→  return (
+   675→    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+   676→      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" />
+   677→    </svg>
+   678→  )
+   679→}
+   680→
+   681→// ─── Register Page ───
+   682→function RegisterPage() {
+   683→  const setPage = useAppStore(s => s.setPage)
+   684→  const setRegistration = useAppStore(s => s.setRegistration)
+   685→  const [form, setForm] = useState({
+   686→    email: '', password: '', firstName: '', lastName: '', dateOfBirth: '', phone: '',
+   687→    address: '', city: 'Brazzaville', nationality: 'Congo', genre: 'M',
+   688→    filiereCategory: 'Gestion', filiere: '', niveau: 'L1', anneeScolaire: new Date().getFullYear().toString(),
+   689→  })
+   690→  const [loading, setLoading] = useState(false)
+   691→  const [error, setError] = useState('')
+   692→
+   693→  const update = (k: string, v: string) => {
+   694→    const n = { ...form, [k]: v }
+   695→    if (k === 'filiereCategory') n.filiere = ''
+   696→    setForm(n)
+   697→  }
+   698→
+   699→  const handleSubmit = async (e: FormEvent) => {
+   700→    e.preventDefault()
+   701→    setError('')
+   702→    if (!form.filiere) { setError('Veuillez sélectionner une filière'); return }
+   703→    if (!form.email.toLowerCase().endsWith('@gmail.com')) { setError('Seules les adresses @gmail.com sont acceptées'); return }
+   704→    setLoading(true)
+   705→    try {
+   706→      const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+   707→      const data = await res.json()
+   708→      if (!res.ok) { setError(data.error || 'Erreur'); return }
+   709→      setRegistration(data.email, data.studentId, data.verificationCode)
+   710→      setPage('verify')
+   711→    } catch { setError('Erreur de connexion au serveur') }
+   712→    finally { setLoading(false) }
+   713→  }
+   714→
+   715→  return (
+   716→    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
+   717→      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl">
+   718→        <div className="text-center mb-8">
+   719→          <button onClick={() => setPage('landing')} className="inline-block">
+   720→            <img src={LOGO} alt="ESTAM" className="w-16 h-16 rounded-xl mx-auto border-2 border-blue-500/30 object-contain mb-4" />
+   721→          </button>
+   722→          <h1 className="text-2xl font-bold text-white">Inscription Étudiant</h1>
+   723→          <p className="text-zinc-400 text-sm mt-1">Créez votre compte ESTAM</p>
+   724→        </div>
+   725→        <Card className="bg-zinc-900 border-zinc-800">
+   726→          <CardContent className="pt-6">
+   727→            <form onSubmit={handleSubmit} className="space-y-4">
+   728→              <div className="grid sm:grid-cols-2 gap-4">
+   729→                <div><Label className="text-zinc-300">Prénom *</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.firstName} onChange={e => update('firstName', e.target.value)} required /></div>
+   730→                <div><Label className="text-zinc-300">Nom *</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.lastName} onChange={e => update('lastName', e.target.value)} required /></div>
+   731→              </div>
+   732→              <div className="grid sm:grid-cols-2 gap-4">
+   733→                <div><Label className="text-zinc-300">Email (Gmail uniquement) *</Label><Input type="email" className="mt-1 bg-zinc-800 border-zinc-700 text-white" placeholder="exemple@gmail.com" value={form.email} onChange={e => update('email', e.target.value)} required /></div>
+   734→                <div><Label className="text-zinc-300">Mot de passe *</Label><Input type="password" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.password} onChange={e => update('password', e.target.value)} required /></div>
+   735→              </div>
+   736→              <div className="grid sm:grid-cols-3 gap-4">
+   737→                <div><Label className="text-zinc-300">Date de naissance</Label><Input type="date" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.dateOfBirth} onChange={e => update('dateOfBirth', e.target.value)} /></div>
+   738→                <div><Label className="text-zinc-300">Genre</Label>
+   739→                  <Select value={form.genre} onValueChange={v => update('genre', v)}>
+   740→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+   741→                    <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
+   742→                  </Select>
+   743→                </div>
+   744→                <div><Label className="text-zinc-300">Téléphone</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.phone} onChange={e => update('phone', e.target.value)} placeholder="+242 06 XXX XX XX" /></div>
+   745→              </div>
+   746→              <div className="grid sm:grid-cols-2 gap-4">
+   747→                <div><Label className="text-zinc-300">Ville *</Label>
+   748→                  <Select value={form.city} onValueChange={v => update('city', v)}>
+   749→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+   750→                    <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Brazzaville">Brazzaville</SelectItem><SelectItem value="Pointe-Noire">Pointe-Noire</SelectItem></SelectContent>
+   751→                  </Select>
+   752→                </div>
+   753→                <div><Label className="text-zinc-300">Nationalité</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.nationality} onChange={e => update('nationality', e.target.value)} /></div>
+   754→              </div>
+   755→              <div><Label className="text-zinc-300">Adresse</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={form.address} onChange={e => update('address', e.target.value)} /></div>
+   756→              <Separator className="bg-zinc-700" />
+   757→              <div className="grid sm:grid-cols-3 gap-4">
+   758→                <div><Label className="text-zinc-300">Domaine *</Label>
+   759→                  <Select value={form.filiereCategory} onValueChange={v => update('filiereCategory', v)}>
+   760→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+   761→                    <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Gestion">Gestion</SelectItem><SelectItem value="Technologie">Technologie</SelectItem></SelectContent>
+   762→                  </Select>
+   763→                </div>
+   764→                <div><Label className="text-zinc-300">Filière *</Label>
+   765→                  <Select value={form.filiere || ''} onValueChange={v => update('filiere', v)}>
+   766→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+   767→                    <SelectContent className="bg-zinc-800 border-zinc-700">
+   768→                      {FILIERES[form.filiereCategory]?.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+   769→                    </SelectContent>
+   770→                  </Select>
+   771→                </div>
+   772→                <div><Label className="text-zinc-300">Niveau *</Label>
+   773→                  <Select value={form.niveau} onValueChange={v => update('niveau', v)}>
+   774→                    <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+   775→                    <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="L1">Licence 1</SelectItem><SelectItem value="L2">Licence 2</SelectItem><SelectItem value="L3">Licence 3</SelectItem></SelectContent>
+   776→                  </Select>
+   777→                </div>
+   778→              </div>
+   779→              {error && <p className="text-red-400 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+   780→              <Button type="submit" disabled={loading} className="w-full bg-blue-600 text-white hover:bg-blue-700">
+   781→                {loading ? 'Inscription en cours...' : "S'inscrire"}
+   782→              </Button>
+   783→            </form>
+   784→            <div className="text-center mt-4 space-y-2">
+   785→              <p className="text-zinc-400 text-sm">Déjà inscrit ? <button onClick={() => setPage('mini-login')} className="text-blue-400 hover:underline">Se connecter</button></p>
+   786→              <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour à l&apos;accueil</button>
+   787→            </div>
+   788→          </CardContent>
+   789→        </Card>
+   790→      </motion.div>
+   791→    </div>
+   792→  )
+   793→}
+   794→
+   795→// ─── Verify Page ───
+   796→function VerifyPage() {
+   797→  const { registeredEmail, registeredStudentId, registeredCode, setPage } = useAppStore()
+   798→  const [code, setCode] = useState('')
+   799→  const [error, setError] = useState('')
+   800→  const [loading, setLoading] = useState(false)
+   801→
+   802→  const handleSubmit = async (e: FormEvent) => {
+   803→    e.preventDefault()
+   804→    setError('')
+   805→    setLoading(true)
+   806→    try {
+   807→      const res = await fetch('/api/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentId: registeredStudentId, code }) })
+   808→      const data = await res.json()
+   809→      if (!res.ok) { setError(data.error || 'Erreur'); return }
+   810→      setPage('verification-steps')
+   811→    } catch { setError('Erreur de connexion') }
+   812→    finally { setLoading(false) }
+   813→  }
+   814→
+   815→  return (
+   816→    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+   817→      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
+   818→        <button onClick={() => setPage('landing')} className="inline-block mb-4">
+   819→          <img src={LOGO} alt="ESTAM" className="w-14 h-14 rounded-xl mx-auto object-contain" />
+   820→        </button>
+   821→        <Card className="bg-zinc-900 border-zinc-800">
+   822→          <CardHeader className="text-center">
+   823→            <CheckCircle2 className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+   824→            <CardTitle className="text-white text-xl">Inscription réussie !</CardTitle>
+   825→            <CardDescription className="text-zinc-400">Vérifiez votre boîte email Gmail</CardDescription>
+   826→          </CardHeader>
+   827→          <CardContent className="space-y-4">
+   828→            <div className="bg-zinc-800 rounded-lg p-4 space-y-2">
+   829→              <p className="text-zinc-400 text-xs">Votre identifiant étudiant</p>
+   830→              <p className="text-blue-400 font-bold text-lg font-mono">{registeredStudentId}</p>
+   831→              <p className="text-zinc-400 text-xs">Email : {registeredEmail}</p>
+   832→            </div>
+   833→            <p className="text-zinc-300 text-sm text-center">Un code de vérification a été envoyé à votre adresse email. Saisissez-le ci-dessous :</p>
+   834→            <form onSubmit={handleSubmit} className="space-y-4">
+   835→              <Input className="bg-zinc-800 border-zinc-700 text-white text-center text-2xl tracking-[0.5em] font-mono" maxLength={6} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} placeholder="000000" required />
+   836→              {error && <p className="text-red-400 text-sm text-center flex items-center justify-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+   837→              <Button type="submit" disabled={loading} className="w-full bg-blue-600 text-white hover:bg-blue-700">{loading ? 'Vérification...' : 'Vérifier mon compte'}</Button>
+   838→            </form>
+   839→            <p className="text-zinc-500 text-xs text-center">(Code de test : {registeredCode})</p>
+   840→          </CardContent>
+   841→        </Card>
+   842→      </motion.div>
+   843→    </div>
+   844→  )
+   845→}
+   846→
+   847→// ─── Login Page ───
+   848→function LoginPage() {
+   849→  const { setPage, setStudent, setGrades, setPayments, setNotifications } = useAppStore()
+   850→  const [email, setEmail] = useState('')
+   851→  const [password, setPassword] = useState('')
+   852→  const [showPw, setShowPw] = useState(false)
+   853→  const [loading, setLoading] = useState(false)
+   854→  const [error, setError] = useState('')
+   855→
+   856→  const handleSubmit = async (e: FormEvent) => {
+   857→    e.preventDefault()
+   858→    setError('')
+   859→    setLoading(true)
+   860→    try {
+   861→      const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+   862→      const data = await res.json()
+   863→      if (!res.ok) {
+   864→        if (data.needsVerification) setError('Compte non vérifié. Veuillez vérifier votre email.')
+   865→        else setError(data.error || 'Identifiants incorrects')
+   866→        return
+   867→      }
+   868→      setStudent(data.student)
+   869→      setNotifications(data.notifications || [])
+   870→      const [gRes, pRes] = await Promise.all([
+   871→        fetch(`/api/grades?studentDbId=${data.student.id}`),
+   872→        fetch(`/api/payments?studentDbId=${data.student.id}`),
+   873→      ])
+   874→      const gData = await gRes.json()
+   875→      const pData = await pRes.json()
+   876→      setGrades(gData.grades || [])
+   877→      setPayments(pData.payments || [])
+   878→      setPage('loading')
+   879→    } catch { setError('Erreur de connexion au serveur') }
+   880→    finally { setLoading(false) }
+   881→  }
+   882→
+   883→  return (
+   884→    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+   885→      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+   886→        <div className="text-center mb-8">
+   887→          <button onClick={() => setPage('landing')} className="inline-block">
+   888→            <img src={LOGO} alt="ESTAM" className="w-16 h-16 rounded-xl mx-auto border-2 border-blue-500/30 object-contain mb-4" />
+   889→          </button>
+   890→          <h1 className="text-2xl font-bold text-white">Connexion Étudiant</h1>
+   891→          <p className="text-zinc-400 text-sm mt-1">Accédez à votre espace ESTAM</p>
+   892→        </div>
+   893→        <Card className="bg-zinc-900 border-zinc-800">
+   894→          <CardContent className="pt-6">
+   895→            <form onSubmit={handleSubmit} className="space-y-4">
+   896→              <div>
+   897→                <Label className="text-zinc-300">Email</Label>
+   898→                <div className="relative mt-1">
+   899→                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+   900→                  <Input className="pl-10 bg-zinc-800 border-zinc-700 text-white" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+   901→                </div>
+   902→              </div>
+   903→              <div>
+   904→                <Label className="text-zinc-300">Mot de passe</Label>
+   905→                <div className="relative mt-1">
+   906→                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+   907→                  <Input className="pl-10 pr-10 bg-zinc-800 border-zinc-700 text-white" type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required />
+   908→                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+   909→                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+   910→                  </button>
+   911→                </div>
+   912→              </div>
+   913→              {error && <p className="text-red-400 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+   914→              <Button type="submit" disabled={loading} className="w-full bg-blue-600 text-white hover:bg-blue-700">{loading ? 'Connexion...' : 'Se connecter'}</Button>
+   915→            </form>
+   916→            <div className="text-center mt-4 space-y-2">
+   917→              <p className="text-zinc-400 text-sm">Pas encore de compte ? <button onClick={() => setPage('mini-register')} className="text-blue-400 hover:underline">S&apos;inscrire</button></p>
+   918→              <button onClick={() => setPage('mini-admin-login')} className="text-zinc-500 hover:text-blue-400 text-xs">Accès Administration</button>
+   919→              <br />
+   920→              <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour</button>
+   921→            </div>
+   922→          </CardContent>
+   923→        </Card>
+   924→      </motion.div>
+   925→    </div>
+   926→  )
+   927→}
+   928→
+   929→// ─── Admin Login Page ───
+   930→function AdminLoginPage() {
+   931→  const { setPage, setAdmin, setAdminEmail } = useAppStore()
+   932→  const [email, setEmail] = useState('')
+   933→  const [password, setPassword] = useState('')
+   934→  const [loading, setLoading] = useState(false)
+   935→  const [error, setError] = useState('')
+   936→
+   937→  const handleSubmit = async (e: FormEvent) => {
+   938→    e.preventDefault()
+   939→    setError('')
+   940→    setLoading(true)
+   941→    try {
+   942→      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+   943→      const data = await res.json()
+   944→      if (!res.ok) { setError(data.error || 'Identifiants incorrects'); return }
+   945→      setAdmin(true)
+   946→      setAdminEmail(data.admin.email)
+   947→      setPage('admin-loading')
+   948→    } catch { setError('Erreur de connexion') }
+   949→    finally { setLoading(false) }
+   950→  }
+   951→
+   952→  return (
+   953→    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+   954→      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+   955→        <div className="text-center mb-8">
+   956→          <button onClick={() => setPage('landing')} className="inline-block">
+   957→            <img src={LOGO} alt="ESTAM" className="w-16 h-16 rounded-xl mx-auto border-2 border-blue-500/30 object-contain mb-4" />
+   958→          </button>
+   959→          <Shield className="w-10 h-10 text-blue-500 mx-auto mb-2" />
+   960→          <h1 className="text-2xl font-bold text-white">Administration ESTAM</h1>
+   961→          <p className="text-zinc-400 text-sm mt-1">Connexion administrateur</p>
+   962→        </div>
+   963→        <Card className="bg-zinc-900 border-zinc-800">
+   964→          <CardContent className="pt-6">
+   965→            <form onSubmit={handleSubmit} className="space-y-4">
+   966→              <div>
+   967→                <Label className="text-zinc-300">Email administrateur</Label>
+   968→                <Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@estam.cg" />
+   969→              </div>
+   970→              <div>
+   971→                <Label className="text-zinc-300">Mot de passe</Label>
+   972→                <Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+   973→              </div>
+   974→              {error && <p className="text-red-400 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+   975→              <Button type="submit" disabled={loading} className="w-full bg-blue-600 text-white hover:bg-blue-700">{loading ? 'Connexion...' : 'Se connecter'}</Button>
+   976→            </form>
+   977→            <div className="text-center mt-4 space-y-2">
+   978→              <button onClick={() => setPage('mini-login')} className="text-zinc-400 text-sm hover:text-blue-400">Connexion Étudiant</button>
+   979→              <br />
+   980→              <button onClick={() => setPage('landing')} className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mx-auto"><ArrowLeft className="w-3 h-3" /> Retour</button>
+   981→            </div>
+   982→          </CardContent>
+   983→        </Card>
+   984→      </motion.div>
+   985→    </div>
+   986→  )
+   987→}
+   988→
+   989→// ─── Student Dashboard ───
+   990→function StudentDashboard() {
+   991→  const { student, grades, payments, notifications, setPage, setStudent, setGrades, setPayments, setNotifications } = useAppStore()
+   992→  const [tab, setTab] = useState('dashboard')
+   993→  const [sidebarOpen, setSidebarOpen] = useState(false)
+   994→  const [editing, setEditing] = useState(false)
+   995→  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', phone: '', address: '', city: '', nationality: '', genre: '', dateOfBirth: '' })
+   996→  const [saveMsg, setSaveMsg] = useState('')
+   997→
+   998→  if (!student) return null
+   999→
+  1000→  const startEdit = () => {
+  1001→    setEditForm({ firstName: student.firstName, lastName: student.lastName, phone: student.phone || '', address: student.address || '', city: student.city || '', nationality: student.nationality || '', genre: student.genre || '', dateOfBirth: student.dateOfBirth || '' })
+  1002→    setEditing(true)
+  1003→    setSaveMsg('')
+  1004→  }
+  1005→
+  1006→  const saveProfile = async () => {
+  1007→    try {
+  1008→      const res = await fetch('/api/students/update', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: student.id, ...editForm }) })
+  1009→      const data = await res.json()
+  1010→      if (data.success) {
+  1011→        setStudent({ ...student, ...editForm })
+  1012→        setSaveMsg('Profil mis à jour avec succès')
+  1013→        setEditing(false)
+  1014→      } else { setSaveMsg(data.error || 'Erreur') }
+  1015→    } catch { setSaveMsg('Erreur serveur') }
+  1016→  }
+  1017→
+  1018→  const paidCount = payments.filter(p => p.statut === 'paye').length
+  1019→  const unpaidCount = payments.filter(p => p.statut === 'impaye').length
+  1020→
+  1021→  const handleLogout = () => {
+  1022→    setStudent(null); setGrades([]); setPayments([]); setNotifications([])
+  1023→    setPage('landing')
+  1024→  }
+  1025→
+  1026→  const menuItems = [
+  1027→    { id: 'dashboard', icon: BarChart3, label: 'Tableau de bord' },
+  1028→    { id: 'notes', icon: BookOpen, label: 'Mes Notes' },
+  1029→    { id: 'paiements', icon: CreditCard, label: 'Mes Paiements' },
+  1030→    { id: 'profil', icon: User, label: 'Mon Profil' },
+  1031→  ]
+  1032→
+  1033→  return (
+  1034→    <div className="min-h-screen bg-black flex">
+  1035→      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+  1036→      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+  1037→        <div className="p-4 border-b border-zinc-800">
+  1038→          <button onClick={() => setPage('landing')} className="flex items-center gap-3 hover:opacity-80 transition">
+  1039→            <img src={LOGO} alt="ESTAM" className="w-10 h-10 rounded-lg object-contain" />
+  1040→            <div>
+  1041→              <p className="text-blue-500 font-bold text-sm">ESTAM</p>
+  1042→              <p className="text-zinc-500 text-xs">Espace Étudiant</p>
+  1043→            </div>
+  1044→          </button>
+  1045→          <button className="ml-auto lg:hidden absolute right-4 top-4 text-zinc-400" onClick={() => setSidebarOpen(false)}><X className="w-5 h-5" /></button>
+  1046→        </div>
+  1047→        <nav className="flex-1 p-3 space-y-1">
+  1048→          {menuItems.map(item => (
+  1049→            <button key={item.id} onClick={() => { setTab(item.id); setSidebarOpen(false) }}
+  1050→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${tab === item.id ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}`}>
+  1051→              <item.icon className="w-5 h-5" />{item.label}
+  1052→            </button>
+  1053→          ))}
+  1054→        </nav>
+  1055→        <div className="p-3 border-t border-zinc-800">
+  1056→          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition">
+  1057→            <LogOut className="w-5 h-5" />Déconnexion
+  1058→          </button>
+  1059→        </div>
+  1060→      </aside>
+  1061→
+  1062→      <main className="flex-1 min-h-screen">
+  1063→        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-zinc-800 px-4 sm:px-6 h-14 flex items-center gap-4">
+  1064→          <button className="lg:hidden text-zinc-400" onClick={() => setSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
+  1065→          <h2 className="text-white font-semibold text-sm sm:text-base">{menuItems.find(m => m.id === tab)?.label}</h2>
+  1066→          <div className="ml-auto flex items-center gap-3">
+  1067→            <NotificationBell />
+  1068→            <Badge variant="outline" className="border-blue-500/30 text-blue-400 text-xs font-mono">{student.studentId}</Badge>
+  1069→            <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 text-sm font-bold">
+  1070→              {student.firstName[0]}{student.lastName[0]}
+  1071→            </div>
+  1072→          </div>
+  1073→        </header>
+  1074→
+  1075→        <div className="p-4 sm:p-6 max-w-6xl">
+  1076→          {/* Dashboard Tab */}
+  1077→          {tab === 'dashboard' && (
+  1078→            <div className="space-y-6">
+  1079→              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+  1080→                <Card className="bg-zinc-900 border-zinc-800">
+  1081→                  <CardContent className="pt-6">
+  1082→                    <h3 className="text-white text-lg font-semibold">Bienvenue, {student.firstName} {student.lastName}</h3>
+  1083→                    <p className="text-zinc-400 text-sm mt-1">{student.filiere} - {student.niveau} | {student.anneeScolaire}</p>
+  1084→                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6">
+  1085→                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-blue-500">{grades.length}</p><p className="text-zinc-400 text-xs">Notes</p></div>
+  1086→                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-green-400">{paidCount}</p><p className="text-zinc-400 text-xs">Payés</p></div>
+  1087→                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-red-400">{unpaidCount}</p><p className="text-zinc-400 text-xs">Impayés</p></div>
+  1088→                    </div>
+  1089→                  </CardContent>
+  1090→                </Card>
+  1091→              </motion.div>
+  1092→            </div>
+  1093→          )}
+  1094→
+  1095→          {/* Notes Tab */}
+  1096→          {tab === 'notes' && (
+  1097→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+  1098→              {grades.length === 0 ? (
+  1099→                <Card className="bg-zinc-900 border-zinc-800"><CardContent className="py-12 text-center"><BookOpen className="w-12 h-12 text-zinc-700 mx-auto mb-3" /><p className="text-zinc-500">Aucune note publiée pour le moment</p></CardContent></Card>
+  1100→              ) : (
+  1101→                <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
+  1102→                  <div className="overflow-x-auto">
+  1103→                    <table className="w-full text-sm">
+  1104→                      <thead><tr className="border-b border-zinc-800">
+  1105→                        <th className="text-left text-zinc-400 font-medium px-4 py-3">Matière</th>
+  1106→                        <th className="text-left text-zinc-400 font-medium px-4 py-3">Type</th>
+  1107→                        <th className="text-left text-zinc-400 font-medium px-4 py-3">Note</th>
+  1108→                        <th className="text-left text-zinc-400 font-medium px-4 py-3 hidden sm:table-cell">Coeff.</th>
+  1109→                        <th className="text-left text-zinc-400 font-medium px-4 py-3">Semestre</th>
+  1110→                      </tr></thead>
+  1111→                      <tbody>
+  1112→                        {grades.map(g => (
+  1113→                          <tr key={g.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition">
+  1114→                            <td className="px-4 py-3 text-white">{g.matiere}</td>
+  1115→                            <td className="px-4 py-3"><Badge variant="outline" className="border-zinc-700 text-zinc-300 text-xs">{g.type}</Badge></td>
+  1116→                            <td className="px-4 py-3 font-bold text-blue-400">{g.note}</td>
+  1117→                            <td className="px-4 py-3 text-zinc-400 hidden sm:table-cell">{g.coefficient || '-'}</td>
+  1118→                            <td className="px-4 py-3 text-zinc-400">{g.semestre}</td>
+  1119→                          </tr>
+  1120→                        ))}
+  1121→                      </tbody>
+  1122→                    </table>
+  1123→                  </div>
+  1124→                </Card>
+  1125→              )}
+  1126→            </motion.div>
+  1127→          )}
+  1128→
+  1129→          {/* Paiements Tab */}
+  1130→          {tab === 'paiements' && (
+  1131→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+  1132→              {payments.length === 0 ? (
+  1133→                <Card className="bg-zinc-900 border-zinc-800"><CardContent className="py-12 text-center"><CreditCard className="w-12 h-12 text-zinc-700 mx-auto mb-3" /><p className="text-zinc-500">Aucun paiement enregistré</p></CardContent></Card>
+  1134→              ) : (
+  1135→                <div className="grid sm:grid-cols-2 gap-4">
+  1136→                  {payments.map(p => (
+  1137→                    <Card key={p.id} className="bg-zinc-900 border-zinc-800">
+  1138→                      <CardContent className="pt-4">
+  1139→                        <div className="flex items-center justify-between mb-2">
+  1140→                          <span className="text-white font-medium">{p.mois}</span>
+  1141→                          <Badge className={p.statut === 'paye' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}>
+  1142→                            {p.statut === 'paye' ? <><CheckCircle2 className="w-3 h-3 mr-1" />Payé</> : <><XCircle className="w-3 h-3 mr-1" />Impayé</>}
+  1143→                          </Badge>
+  1144→                        </div>
+  1145→                        <p className="text-blue-400 font-bold text-lg">{p.montant.toLocaleString()} FCFA</p>
+  1146→                        {p.datePaiement && <p className="text-zinc-500 text-xs mt-1">Date : {p.datePaiement}</p>}
+  1147→                        <p className="text-zinc-600 text-xs mt-1">Année : {p.anneeScolaire}</p>
+  1148→                      </CardContent>
+  1149→                    </Card>
+  1150→                  ))}
+  1151→                </div>
+  1152→              )}
+  1153→            </motion.div>
+  1154→          )}
+  1155→
+  1156→          {/* Profil Tab */}
+  1157→          {tab === 'profil' && (
+  1158→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+  1159→              <Card className="bg-zinc-900 border-zinc-800">
+  1160→                <CardHeader>
+  1161→                  <div className="flex items-center justify-between">
+  1162→                    <div className="flex items-center gap-4">
+  1163→                      <div className="w-16 h-16 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 text-2xl font-bold">
+  1164→                        {student.firstName[0]}{student.lastName[0]}
+  1165→                      </div>
+  1166→                      <div>
+  1167→                        <CardTitle className="text-white">{student.firstName} {student.lastName}</CardTitle>
+  1168→                        <CardDescription className="text-blue-400 font-mono">{student.studentId}</CardDescription>
+  1169→                      </div>
+  1170→                    </div>
+  1171→                    {!editing ? (
+  1172→                      <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-400 text-xs" onClick={startEdit}><Edit3 className="w-3 h-3 mr-1" />Modifier</Button>
+  1173→                    ) : (
+  1174→                      <div className="flex gap-2">
+  1175→                        <Button size="sm" className="bg-blue-600 text-white hover:bg-blue-700 text-xs" onClick={saveProfile}><Save className="w-3 h-3 mr-1" />Enregistrer</Button>
+  1176→                        <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-400 text-xs" onClick={() => { setEditing(false); setSaveMsg('') }}>Annuler</Button>
+  1177→                      </div>
+  1178→                    )}
+  1179→                  </div>
+  1180→                </CardHeader>
+  1181→                <CardContent className="space-y-4">
+  1182→                  {saveMsg && <p className={`text-sm flex items-center gap-1 ${saveMsg.includes('succès') ? 'text-green-400' : 'text-red-400'}`}>{saveMsg.includes('succès') ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}{saveMsg}</p>}
+  1183→                  {!editing ? (
+  1184→                    <div className="grid sm:grid-cols-2 gap-4">
+  1185→                      {[
+  1186→                        { label: 'Email', value: student.email, icon: Mail },
+  1187→                        { label: 'Téléphone', value: student.phone || '-', icon: Phone },
+  1188→                        { label: 'Ville', value: student.city || '-', icon: MapPin },
+  1189→                        { label: 'Filière', value: student.filiere, icon: BookOpen },
+  1190→                        { label: 'Niveau', value: student.niveau, icon: GraduationCap },
+  1191→                        { label: 'Année', value: student.anneeScolaire, icon: Calendar },
+  1192→                      ].map(item => (
+  1193→                        <div key={item.label} className="bg-zinc-800 rounded-lg p-3 flex items-center gap-3">
+  1194→                          <item.icon className="w-4 h-4 text-blue-400 flex-shrink-0" />
+  1195→                          <div><p className="text-zinc-500 text-xs">{item.label}</p><p className="text-white text-sm">{item.value}</p></div>
+  1196→                        </div>
+  1197→                      ))}
+  1198→                    </div>
+  1199→                  ) : (
+  1200→                    <div className="grid sm:grid-cols-2 gap-4">
+  1201→                      <div><Label className="text-zinc-300">Prénom</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} /></div>
+  1202→                      <div><Label className="text-zinc-300">Nom</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} /></div>
+  1203→                      <div><Label className="text-zinc-300">Téléphone</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} /></div>
+  1204→                      <div><Label className="text-zinc-300">Date de naissance</Label><Input type="date" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.dateOfBirth} onChange={e => setEditForm({ ...editForm, dateOfBirth: e.target.value })} /></div>
+  1205→                      <div><Label className="text-zinc-300">Genre</Label>
+  1206→                        <Select value={editForm.genre} onValueChange={v => setEditForm({ ...editForm, genre: v })}>
+  1207→                          <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1208→                          <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
+  1209→                        </Select>
+  1210→                      </div>
+  1211→                      <div><Label className="text-zinc-300">Ville</Label>
+  1212→                        <Select value={editForm.city} onValueChange={v => setEditForm({ ...editForm, city: v })}>
+  1213→                          <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1214→                          <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Brazzaville">Brazzaville</SelectItem><SelectItem value="Pointe-Noire">Pointe-Noire</SelectItem></SelectContent>
+  1215→                        </Select>
+  1216→                      </div>
+  1217→                      <div className="sm:col-span-2"><Label className="text-zinc-300">Adresse</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} /></div>
+  1218→                      <div><Label className="text-zinc-300">Nationalité</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.nationality} onChange={e => setEditForm({ ...editForm, nationality: e.target.value })} /></div>
+  1219→                    </div>
+  1220→                  )}
+  1221→                </CardContent>
+  1222→              </Card>
+  1223→            </motion.div>
+  1224→          )}
+  1225→        </div>
+  1226→      </main>
+  1227→    </div>
+  1228→  )
+  1229→}
+  1230→
+  1231→// ─── Admin Dashboard ───
+  1232→function AdminDashboard() {
+  1233→  const { adminEmail, setPage, setAdmin } = useAppStore()
+  1234→  const [tab, setTab] = useState('dashboard')
+  1235→  const [sidebarOpen, setSidebarOpen] = useState(false)
+  1236→  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  1237→  const [selectedFiliere, setSelectedFiliere] = useState<string | null>(null)
+  1238→  const [searchQuery, setSearchQuery] = useState('')
+  1239→  const [students, setStudents] = useState<Record<string, unknown>[]>([])
+  1240→  const [selectedStudent, setSelectedStudent] = useState<Record<string, unknown> | null>(null)
+  1241→  const [loading, setLoading] = useState(false)
+  1242→  const [gradeForm, setGradeForm] = useState({ matiere: '', type: 'Semestre', note: '', coefficient: '', semestre: 'Semestre 1', anneeScolaire: new Date().getFullYear().toString(), comment: '' })
+  1243→  const [payForm, setPayForm] = useState({ mois: MOIS[0], montant: '35000', datePaiement: '', statut: 'impaye', anneeScolaire: new Date().getFullYear().toString() })
+  1244→  const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' })
+  1245→  const [pwMsg, setPwMsg] = useState('')
+  1246→  const [filiereCounts, setFiliereCounts] = useState<Record<string, number>>({})
+  1247→  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  1248→  const [broadcastForm, setBroadcastForm] = useState({ titre: '', message: '', type: 'info' })
+  1249→  const [broadcastMsg, setBroadcastMsg] = useState('')
+  1250→  const [allStudents, setAllStudents] = useState<Record<string, unknown>[]>([])
+  1251→  const [allSearch, setAllSearch] = useState('')
+  1252→  const [qrDataUrl, setQrDataUrl] = useState('')
+  1253→
+  1254→  const fetchCounts = async () => {
+  1255→    try {
+  1256→      const res = await fetch('/api/admin/counts')
+  1257→      const data = await res.json()
+  1258→      setFiliereCounts(data.counts || {})
+  1259→    } catch {}
+  1260→  }
+  1261→
+  1262→  useEffect(() => { fetchCounts() }, [tab, selectedStudent])
+  1263→
+  1264→  const fetchStudents = async (category?: string, filiere?: string, search?: string) => {
+  1265→    setLoading(true)
+  1266→    const params = new URLSearchParams()
+  1267→    if (category) params.set('category', category)
+  1268→    if (filiere) params.set('filiere', filiere)
+  1269→    if (search) params.set('search', search)
+  1270→    try {
+  1271→      const res = await fetch(`/api/admin/students?${params.toString()}`)
+  1272→      const data = await res.json()
+  1273→      setStudents(data.students || [])
+  1274→    } catch { setStudents([]) }
+  1275→    finally { setLoading(false) }
+  1276→  }
+  1277→
+  1278→  useEffect(() => {
+  1279→    if (selectedCategory && selectedFiliere) fetchStudents(selectedCategory, selectedFiliere, searchQuery)
+  1280→  }, [selectedCategory, selectedFiliere, searchQuery])
+  1281→
+  1282→  const fetchAllStudents = async (search?: string) => {
+  1283→    setLoading(true)
+  1284→    const params = new URLSearchParams()
+  1285→    if (search) params.set('search', search)
+  1286→    try {
+  1287→      const res = await fetch(`/api/admin/students?${params.toString()}`)
+  1288→      const data = await res.json()
+  1289→      setAllStudents(data.students || [])
+  1290→    } catch { setAllStudents([]) }
+  1291→    finally { setLoading(false) }
+  1292→  }
+  1293→
+  1294→  useEffect(() => {
+  1295→    if (tab === 'classe') fetchAllStudents(allSearch)
+  1296→  }, [tab, allSearch])
+  1297→
+  1298→  const handleLogout = () => { setAdmin(false); setPage('landing') }
+  1299→
+  1300→  const deleteStudents = async (ids: string[]) => {
+  1301→    if (!confirm(`Supprimer ${ids.length} étudiant(s) ?`)) return
+  1302→    try {
+  1303→      await fetch(`/api/admin/students?ids=${ids.join(',')}`, { method: 'DELETE' })
+  1304→      setSelectedIds([])
+  1305→      fetchStudents(selectedCategory || undefined, selectedFiliere || undefined, searchQuery)
+  1306→      fetchAllStudents(allSearch)
+  1307→      fetchCounts()
+  1308→    } catch {}
+  1309→  }
+  1310→
+  1311→  const sendBroadcast = async (e: FormEvent) => {
+  1312→    e.preventDefault()
+  1313→    if (!broadcastForm.titre || !broadcastForm.message) return
+  1314→    try {
+  1315→      const res = await fetch('/api/notifications/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(broadcastForm) })
+  1316→      const data = await res.json()
+  1317→      setBroadcastMsg(data.success ? `Notification envoyée à ${data.sent} étudiant(s)` : 'Erreur')
+  1318→      setBroadcastForm({ titre: '', message: '', type: 'info' })
+  1319→    } catch { setBroadcastMsg('Erreur serveur') }
+  1320→  }
+  1321→
+  1322→  const toggleSelect = (id: string) => {
+  1323→    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  1324→  }
+  1325→
+  1326→  const openStudent = async (studentId: string) => {
+  1327→    try {
+  1328→      const res = await fetch(`/api/students/by-studentid?studentId=${studentId}`)
+  1329→      const data = await res.json()
+  1330→      if (data.student) {
+  1331→        const s = data.student as Record<string, unknown>
+  1332→        setSelectedStudent(s)
+  1333→        setTab('student-detail')
+  1334→        // Generate QR code
+  1335→        const qrInfo = JSON.stringify({
+  1336→          id: s.studentId, nom: `${s.firstName} ${s.lastName}`,
+  1337→          email: s.email, filiere: s.filiere, niveau: s.niveau,
+  1338→          ville: s.city
+  1339→        })
+  1340→        QRCode.toDataURL(qrInfo, { width: 200, margin: 2, color: { dark: '#2563eb', light: '#18181b' } }).then(setQrDataUrl).catch(() => {})
+  1341→      }
+  1342→    } catch { }
+  1343→  }
+  1344→
+  1345→  const addGrade = async (e: FormEvent) => {
+  1346→    e.preventDefault()
+  1347→    if (!selectedStudent) return
+  1348→    try {
+  1349→      await fetch('/api/grades', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...gradeForm, studentId: (selectedStudent as Record<string, string>).id, coefficient: gradeForm.coefficient ? parseFloat(gradeForm.coefficient) : null }) })
+  1350→      const res = await fetch(`/api/students/${(selectedStudent as Record<string, string>).id}`)
+  1351→      const data = await res.json()
+  1352→      setSelectedStudent(data.student)
+  1353→      setGradeForm({ matiere: '', type: 'Semestre', note: '', coefficient: '', semestre: 'Semestre 1', anneeScolaire: new Date().getFullYear().toString(), comment: '' })
+  1354→    } catch { }
+  1355→  }
+  1356→
+  1357→  const addPayment = async (e: FormEvent) => {
+  1358→    e.preventDefault()
+  1359→    if (!selectedStudent) return
+  1360→    try {
+  1361→      await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payForm, studentId: (selectedStudent as Record<string, string>).id }) })
+  1362→      const res = await fetch(`/api/students/${(selectedStudent as Record<string, string>).id}`)
+  1363→      const data = await res.json()
+  1364→      setSelectedStudent(data.student)
+  1365→    } catch { }
+  1366→  }
+  1367→
+  1368→  const changePassword = async (e: FormEvent) => {
+  1369→    e.preventDefault()
+  1370→    setPwMsg('')
+  1371→    if (pwForm.newPw !== pwForm.confirm) { setPwMsg('Les mots de passe ne correspondent pas'); return }
+  1372→    try {
+  1373→      const res = await fetch('/api/admin/password', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.newPw }) })
+  1374→      const data = await res.json()
+  1375→      setPwMsg(data.success ? 'Mot de passe modifié avec succès !' : data.error)
+  1376→      if (data.success) setPwForm({ current: '', newPw: '', confirm: '' })
+  1377→    } catch { setPwMsg('Erreur serveur') }
+  1378→  }
+  1379→
+  1380→  const adminMenu = [
+  1381→    { id: 'dashboard', icon: BarChart3, label: 'Tableau de bord' },
+  1382→    { id: 'classe', icon: UsersRound, label: 'Classe Étudiant' },
+  1383→    { id: 'gestion', icon: Users, label: 'Gestion' },
+  1384→    { id: 'technologie', icon: Settings, label: 'Technologie' },
+  1385→    { id: 'diffusion', icon: Megaphone, label: 'Diffusion' },
+  1386→    { id: 'parametres', icon: Settings, label: 'Paramètres' },
+  1387→  ]
+  1388→
+  1389→  return (
+  1390→    <div className="min-h-screen bg-black flex">
+  1391→      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+  1392→      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+  1393→        <div className="p-4 border-b border-zinc-800">
+  1394→          <button onClick={() => setPage('landing')} className="flex items-center gap-3 hover:opacity-80 transition">
+  1395→            <img src={LOGO} alt="ESTAM" className="w-10 h-10 rounded-lg object-contain" />
+  1396→            <div>
+  1397→              <p className="text-blue-500 font-bold text-sm">ESTAM Admin</p>
+  1398→              <p className="text-zinc-500 text-xs">{adminEmail}</p>
+  1399→            </div>
+  1400→          </button>
+  1401→          <button className="ml-auto lg:hidden absolute right-4 top-4 text-zinc-400" onClick={() => setSidebarOpen(false)}><X className="w-5 h-5" /></button>
+  1402→        </div>
+  1403→        <nav className="flex-1 p-3 space-y-1">
+  1404→          {adminMenu.map(item => (
+  1405→            <button key={item.id} onClick={() => { setTab(item.id); setSidebarOpen(false); setSelectedStudent(null); setSelectedFiliere(null) }}
+  1406→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${tab === item.id ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}`}>
+  1407→              <item.icon className="w-5 h-5" />{item.label}
+  1408→            </button>
+  1409→          ))}
+  1410→        </nav>
+  1411→        <div className="p-3 border-t border-zinc-800">
+  1412→          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition">
+  1413→            <LogOut className="w-5 h-5" />Déconnexion
+  1414→          </button>
+  1415→        </div>
+  1416→      </aside>
+  1417→
+  1418→      <main className="flex-1 min-h-screen">
+  1419→        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-zinc-800 px-4 sm:px-6 h-14 flex items-center gap-4">
+  1420→          <button className="lg:hidden text-zinc-400" onClick={() => setSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
+  1421→          <h2 className="text-white font-semibold text-sm sm:text-base">
+  1422→            {tab === 'student-detail' && selectedStudent ? (
+  1423→              <button onClick={() => { setTab(selectedCategory === 'Gestion' ? 'gestion' : selectedCategory === 'Technologie' ? 'technologie' : 'classe'); setSelectedStudent(null) }} className="flex items-center gap-2 text-zinc-400 hover:text-white">
+  1424→                <ArrowLeft className="w-4 h-4" />{(selectedStudent as Record<string, string>).studentId}
+  1425→              </button>
+  1426→            ) : adminMenu.find(m => m.id === tab)?.label}
+  1427→          </h2>
+  1428→        </header>
+  1429→
+  1430→        <div className="p-4 sm:p-6 max-w-7xl">
+  1431→          {/* Admin Dashboard */}
+  1432→          {tab === 'dashboard' && (
+  1433→            <div className="space-y-6">
+  1434→              <Card className="bg-zinc-900 border-zinc-800">
+  1435→                <CardContent className="pt-6">
+  1436→                  <h3 className="text-white text-lg font-semibold mb-4">Vue d&apos;ensemble</h3>
+  1437→                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+  1438→                    <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-blue-500">{Object.values(filiereCounts).reduce((a, b) => a + b, 0) || 0}</p><p className="text-zinc-400 text-xs">Total étudiants</p></div>
+  1439→                    <div className="bg-zinc-800 rounded-lg p-4 text-center"><Users className="w-6 h-6 text-blue-400 mx-auto mb-1" /><p className="text-zinc-400 text-xs">Gestion</p></div>
+  1440→                    <div className="bg-zinc-800 rounded-lg p-4 text-center"><Settings className="w-6 h-6 text-blue-400 mx-auto mb-1" /><p className="text-zinc-400 text-xs">Technologie</p></div>
+  1441→                    <div className="bg-zinc-800 rounded-lg p-4 text-center"><Bell className="w-6 h-6 text-blue-400 mx-auto mb-1" /><p className="text-zinc-400 text-xs">Activité</p></div>
+  1442→                  </div>
+  1443→                </CardContent>
+  1444→              </Card>
+  1445→            </div>
+  1446→          )}
+  1447→
+  1448→          {/* Classe Étudiant - ALL students */}
+  1449→          {tab === 'classe' && !selectedStudent && (
+  1450→            <div className="space-y-4">
+  1451→              <h3 className="text-white font-semibold text-lg">Tous les étudiants inscrits</h3>
+  1452→              <div className="relative">
+  1453→                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+  1454→                <Input className="pl-10 bg-zinc-900 border-zinc-800 text-white" placeholder="Rechercher par nom, prénom ou identifiant (EST...)" value={allSearch} onChange={e => setAllSearch(e.target.value)} />
+  1455→              </div>
+  1456→              {loading ? <div className="text-center py-12"><Loader2 className="w-8 h-8 text-blue-500 mx-auto animate-spin" /></div> : allStudents.length === 0 ? (
+  1457→                <p className="text-zinc-500 text-sm text-center py-12">Aucun étudiant trouvé</p>
+  1458→              ) : (
+  1459→                <div className="space-y-2">
+  1460→                  <p className="text-zinc-500 text-xs">{allStudents.length} étudiant(s) trouvé(s)</p>
+  1461→                  {allStudents.map(s => {
+  1462→                    const st = s as Record<string, string>
+  1463→                    return (
+  1464→                      <Card key={st.id} className="bg-zinc-900 border-zinc-800 cursor-pointer hover:border-blue-500/50 transition" onClick={() => openStudent(st.studentId)}>
+  1465→                        <CardContent className="py-3 px-4 flex items-center gap-4">
+  1466→                          <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-sm">{(st.firstName || '?')[0]}{(st.lastName || '?')[0]}</div>
+  1467→                          <div className="flex-1 min-w-0">
+  1468→                            <p className="text-white text-sm font-medium">{st.firstName} {st.lastName}</p>
+  1469→                            <p className="text-zinc-500 text-xs font-mono">{st.studentId} · {st.filiere || '-'} · {st.niveau || '-'}</p>
+  1470→                          </div>
+  1471→                          <Badge variant="outline" className="border-zinc-700 text-zinc-400 text-xs hidden sm:block">{st.filiereCategory || '-'}</Badge>
+  1472→                          <Badge variant="outline" className={st.verified === 'true' ? 'border-green-500/30 text-green-400 text-xs' : 'border-zinc-700 text-zinc-500 text-xs'}>{st.verified === 'true' ? 'Vérifié' : 'Non vérifié'}</Badge>
+  1473→                          <button onClick={(e) => { e.stopPropagation(); deleteStudents([st.id]) }} className="text-zinc-600 hover:text-red-400 transition p-1"><Trash2 className="w-4 h-4" /></button>
+  1474→                          <ChevronRight className="w-5 h-5 text-zinc-600" />
+  1475→                        </CardContent>
+  1476→                      </Card>
+  1477→                    )
+  1478→                  })}
+  1479→                </div>
+  1480→              )}
+  1481→            </div>
+  1482→          )}
+  1483→
+  1484→          {/* Gestion / Technologie Tab */}
+  1485→          {(tab === 'gestion' || tab === 'technologie') && !selectedStudent && (
+  1486→            <div className="space-y-6">
+  1487→              {!selectedFiliere ? (
+  1488→                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+  1489→                  <h3 className="text-white font-semibold mb-4">Sélectionnez une filière en {tab === 'gestion' ? 'Gestion' : 'Technologie'}</h3>
+  1490→                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1491→                    {FILIERES[tab === 'gestion' ? 'Gestion' : 'Technologie'].map((f, i) => {
+  1492→                      const cat = tab === 'gestion' ? 'Gestion' : 'Technologie'
+  1493→                      const countKey = `${cat}|||${f}`
+  1494→                      const count = filiereCounts[countKey] || 0
+  1495→                      return (
+  1496→                      <Card key={f} className="bg-zinc-900 border-zinc-800 cursor-pointer hover:border-blue-500/50 transition" onClick={() => { setSelectedCategory(cat); setSelectedFiliere(f); setSearchQuery(''); setSelectedIds([]) }}>
+  1497→                        <CardContent className="pt-4 flex items-center gap-3">
+  1498→                          <div className="w-10 h-10 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-400 font-bold">{i + 1}</div>
+  1499→                          <div className="flex-1 min-w-0">
+  1500→                            <p className="text-white text-sm font-medium truncate">{f}</p>
+  1501→                            <p className="text-zinc-500 text-xs">{count} étudiant{count > 1 ? 's' : ''} inscrit{count > 1 ? 's' : ''}</p>
+  1502→                          </div>
+  1503→                          <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-sm">{count}</div>
+  1504→                          <ChevronRight className="w-5 h-5 text-zinc-600" />
+  1505→                        </CardContent>
+  1506→                      </Card>
+  1507→                      )
+  1508→                    })}
+  1509→                  </div>
+  1510→                </motion.div>
+  1511→              ) : (
+  1512→                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+  1513→                  <button onClick={() => { setSelectedFiliere(null); setStudents([]) }} className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm"><ArrowLeft className="w-4 h-4" />Retour aux filières</button>
+  1514→                  <h3 className="text-white font-semibold">{selectedFiliere}</h3>
+  1515→                  <div className="relative">
+  1516→                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+  1517→                    <Input className="pl-10 bg-zinc-900 border-zinc-800 text-white" placeholder="Rechercher par nom ou identifiant (EST...)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+  1518→                  </div>
+  1519→                  {loading ? <p className="text-zinc-500 text-sm">Chargement...</p> : students.length === 0 ? (
+  1520→                    <p className="text-zinc-500 text-sm text-center py-12">Aucun étudiant trouvé dans cette filière</p>
+  1521→                  ) : (
+  1522→                    <>
+  1523→                    {selectedIds.length > 0 && (
+  1524→                      <div className="flex items-center gap-2 mb-2">
+  1525→                        <span className="text-zinc-400 text-sm">{selectedIds.length} sélectionné(s)</span>
+  1526→                        <Button variant="destructive" size="sm" className="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs h-8" onClick={(e) => { e.stopPropagation(); deleteStudents(selectedIds) }}><Trash2 className="w-3 h-3 mr-1" />Supprimer</Button>
+  1527→                        <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-400 text-xs h-8" onClick={() => { if (confirm('Supprimer TOUS les étudiants de cette filière ?')) deleteStudents(students.map(s => (s as Record<string, string>).id)) }}><Trash2 className="w-3 h-3 mr-1" />Tous supprimer</Button>
+  1528→                      </div>
+  1529→                    )}
+  1530→                    <div className="space-y-2">
+  1531→                      {students.map(s => {
+  1532→                        const st = s as Record<string, string>
+  1533→                        const isSelected = selectedIds.includes(st.id)
+  1534→                        return (
+  1535→                          <Card key={st.id} className={`bg-zinc-900 border-zinc-800 cursor-pointer hover:border-blue-500/50 transition ${isSelected ? 'border-blue-500/50 bg-blue-600/5' : ''}`} onClick={() => openStudent(st.studentId)}>
+  1536→                            <CardContent className="py-3 px-4 flex items-center gap-4">
+  1537→                              <button onClick={(e) => { e.stopPropagation(); toggleSelect(st.id) }} className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-zinc-600 hover:border-zinc-400'}`}>
+  1538→                                {isSelected && <Check className="w-3 h-3 text-white" />}
+  1539→                              </button>
+  1540→                              <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-sm">{(st.firstName || '?')[0]}{(st.lastName || '?')[0]}</div>
+  1541→                              <div className="flex-1 min-w-0">
+  1542→                                <p className="text-white text-sm font-medium">{st.firstName} {st.lastName}</p>
+  1543→                                <p className="text-zinc-500 text-xs font-mono">{st.studentId} · {st.niveau}</p>
+  1544→                              </div>
+  1545→                              <Badge variant="outline" className={st.verified === 'true' ? 'border-green-500/30 text-green-400' : 'border-zinc-700 text-zinc-500'}>{st.verified === 'true' ? 'Vérifié' : 'Non vérifié'}</Badge>
+  1546→                              <button onClick={(e) => { e.stopPropagation(); deleteStudents([st.id]) }} className="text-zinc-600 hover:text-red-400 transition p-1"><Trash2 className="w-4 h-4" /></button>
+  1547→                              <ChevronRight className="w-5 h-5 text-zinc-600" />
+  1548→                            </CardContent>
+  1549→                          </Card>
+  1550→                        )
+  1551→                      })}
+  1552→                    </div>
+  1553→                    </>
+  1554→                  )}
+  1555→                </motion.div>
+  1556→              )}
+  1557→            </div>
+  1558→          )}
+  1559→
+  1560→          {/* Student Detail */}
+  1561→          {tab === 'student-detail' && selectedStudent && (() => {
+  1562→            const s = selectedStudent as Record<string, unknown>
+  1563→            const sGrades = (s.grades as Record<string, string>[]) || []
+  1564→            const sPayments = (s.payments as Record<string, string>[]) || []
+  1565→            return (
+  1566→              <div className="space-y-6">
+  1567→                {/* Student Info Header */}
+  1568→                <Card className="bg-zinc-900 border-zinc-800">
+  1569→                  <CardHeader>
+  1570→                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+  1571→                      <div className="w-16 h-16 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 text-2xl font-bold">{String(s.firstName || '?')[0]}{String(s.lastName || '?')[0]}</div>
+  1572→                      <div className="flex-1">
+  1573→                        <CardTitle className="text-white text-xl">{String(s.firstName)} {String(s.lastName)}</CardTitle>
+  1574→                        <CardDescription className="text-blue-400 font-mono">{String(s.studentId)} · {String(s.filiere)} · {String(s.niveau)}</CardDescription>
+  1575→                      </div>
+  1576→                      <div className="flex gap-2">
+  1577→                        <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-400 text-xs" onClick={() => generateStudentPDF(s)}><Download className="w-3 h-3 mr-1" />PDF</Button>
+  1578→                      </div>
+  1579→                    </div>
+  1580→                  </CardHeader>
+  1581→                  <CardContent>
+  1582→                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+  1583→                      {[
+  1584→                        { l: 'Email', v: String(s.email || '-') },
+  1585→                        { l: 'Téléphone', v: String(s.phone || '-') },
+  1586→                        { l: 'Ville', v: String(s.city || '-') },
+  1587→                        { l: 'Statut', v: String(s.status || '-') },
+  1588→                      ].map(i => (
+  1589→                        <div key={i.l} className="bg-zinc-800 rounded p-2"><p className="text-zinc-500 text-xs">{i.l}</p><p className="text-white text-sm">{i.v}</p></div>
+  1590→                      ))}
+  1591→                    </div>
+  1592→                    {/* QR Code */}
+  1593→                    {qrDataUrl && (
+  1594→                      <div className="mt-4 flex flex-col items-center p-4 bg-zinc-800 rounded-xl">
+  1595→                        <p className="text-zinc-400 text-xs mb-2">Code QR - Informations étudiant</p>
+  1596→                        <img src={qrDataUrl} alt="QR Code" className="w-48 h-48 rounded-lg" />
+  1597→                        <p className="text-zinc-600 text-[10px] mt-2">Scannez pour retrouver les informations de l&apos;étudiant</p>
+  1598→                      </div>
+  1599→                    )}
+  1600→                  </CardContent>
+  1601→                </Card>
+  1602→
+  1603→                {/* Existing Grades */}
+  1604→                <Card className="bg-zinc-900 border-zinc-800">
+  1605→                  <CardHeader><CardTitle className="text-white text-base">Notes publiées</CardTitle></CardHeader>
+  1606→                  <CardContent>
+  1607→                    {sGrades.length === 0 ? <p className="text-zinc-500 text-sm">Aucune note</p> : (
+  1608→                      <div className="overflow-x-auto">
+  1609→                        <table className="w-full text-sm">
+  1610→                          <thead><tr className="border-b border-zinc-800"><th className="text-left text-zinc-400 px-3 py-2">Matière</th><th className="text-left text-zinc-400 px-3 py-2">Type</th><th className="text-left text-zinc-400 px-3 py-2">Note</th><th className="text-left text-zinc-400 px-3 py-2">Sem.</th></tr></thead>
+  1611→                          <tbody>{sGrades.map(g => (
+  1612→                            <tr key={g.id} className="border-b border-zinc-800/50"><td className="px-3 py-2 text-white">{g.matiere}</td><td className="px-3 py-2 text-zinc-400">{g.type}</td><td className="px-3 py-2 text-blue-400 font-bold">{g.note}</td><td className="px-3 py-2 text-zinc-400">{g.semestre}</td></tr>
+  1613→                          ))}</tbody>
+  1614→                        </table>
+  1615→                      </div>
+  1616→                    )}
+  1617→                  </CardContent>
+  1618→                </Card>
+  1619→
+  1620→                {/* Add Grade Form */}
+  1621→                <Card className="bg-zinc-900 border-zinc-800">
+  1622→                  <CardHeader><CardTitle className="text-white text-base">Publier une note</CardTitle></CardHeader>
+  1623→                  <CardContent>
+  1624→                    <form onSubmit={addGrade} className="grid sm:grid-cols-3 gap-3">
+  1625→                      <Input className="bg-zinc-800 border-zinc-700 text-white" placeholder="Matière" value={gradeForm.matiere} onChange={e => setGradeForm({ ...gradeForm, matiere: e.target.value })} required />
+  1626→                      <Select value={gradeForm.type} onValueChange={v => setGradeForm({ ...gradeForm, type: v })}>
+  1627→                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1628→                        <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Session">Session</SelectItem><SelectItem value="Devoir">Devoir</SelectItem><SelectItem value="Semestre">Semestre</SelectItem><SelectItem value="Rattrapage">Rattrapage</SelectItem></SelectContent>
+  1629→                      </Select>
+  1630→                      <Input className="bg-zinc-800 border-zinc-700 text-white" placeholder="Note (ex: 14/20)" value={gradeForm.note} onChange={e => setGradeForm({ ...gradeForm, note: e.target.value })} required />
+  1631→                      <Input className="bg-zinc-800 border-zinc-700 text-white" placeholder="Coefficient" value={gradeForm.coefficient} onChange={e => setGradeForm({ ...gradeForm, coefficient: e.target.value })} />
+  1632→                      <Select value={gradeForm.semestre} onValueChange={v => setGradeForm({ ...gradeForm, semestre: v })}>
+  1633→                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1634→                        <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Semestre 1">Semestre 1</SelectItem><SelectItem value="Semestre 2">Semestre 2</SelectItem></SelectContent>
+  1635→                      </Select>
+  1636→                      <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">Publier</Button>
+  1637→                    </form>
+  1638→                  </CardContent>
+  1639→                </Card>
+  1640→
+  1641→                {/* Existing Payments */}
+  1642→                <Card className="bg-zinc-900 border-zinc-800">
+  1643→                  <CardHeader><CardTitle className="text-white text-base">Paiements</CardTitle></CardHeader>
+  1644→                  <CardContent>
+  1645→                    {sPayments.length === 0 ? <p className="text-zinc-500 text-sm">Aucun paiement</p> : (
+  1646→                      <div className="grid sm:grid-cols-2 gap-3">
+  1647→                        {sPayments.map(p => (
+  1648→                          <div key={p.id} className="bg-zinc-800 rounded-lg p-3 flex items-center justify-between">
+  1649→                            <div>
+  1650→                              <p className="text-white text-sm">{p.mois}</p>
+  1651→                              <p className="text-zinc-500 text-xs">{p.datePaiement || '-'} · {p.anneeScolaire}</p>
+  1652→                            </div>
+  1653→                            <div className="text-right">
+  1654→                              <p className="text-blue-400 font-bold text-sm">{Number(p.montant).toLocaleString()} F</p>
+  1655→                              <Badge className={p.statut === 'paye' ? 'bg-green-500/20 text-green-400 text-xs' : 'bg-red-500/20 text-red-400 text-xs'}>{p.statut === 'paye' ? 'Payé' : 'Impayé'}</Badge>
+  1656→                            </div>
+  1657→                          </div>
+  1658→                        ))}
+  1659→                      </div>
+  1660→                    )}
+  1661→                  </CardContent>
+  1662→                </Card>
+  1663→
+  1664→                {/* Add Payment Form */}
+  1665→                <Card className="bg-zinc-900 border-zinc-800">
+  1666→                  <CardHeader><CardTitle className="text-white text-base">Enregistrer un paiement</CardTitle></CardHeader>
+  1667→                  <CardContent>
+  1668→                    <form onSubmit={addPayment} className="grid sm:grid-cols-3 gap-3">
+  1669→                      <Select value={payForm.mois} onValueChange={v => setPayForm({ ...payForm, mois: v })}>
+  1670→                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1671→                        <SelectContent className="bg-zinc-800 border-zinc-700">{MOIS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+  1672→                      </Select>
+  1673→                      <Input className="bg-zinc-800 border-zinc-700 text-white" type="number" placeholder="Montant (FCFA)" value={payForm.montant} onChange={e => setPayForm({ ...payForm, montant: e.target.value })} required />
+  1674→                      <Input className="bg-zinc-800 border-zinc-700 text-white" type="date" value={payForm.datePaiement} onChange={e => setPayForm({ ...payForm, datePaiement: e.target.value })} />
+  1675→                      <Select value={payForm.statut} onValueChange={v => setPayForm({ ...payForm, statut: v })}>
+  1676→                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1677→                        <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="paye">Payé</SelectItem><SelectItem value="impaye">Impayé</SelectItem></SelectContent>
+  1678→                      </Select>
+  1679→                      <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700 sm:col-span-2">Enregistrer</Button>
+  1680→                    </form>
+  1681→                  </CardContent>
+  1682→                </Card>
+  1683→              </div>
+  1684→            )
+  1685→          })()}
+  1686→
+  1687→          {/* Diffusion */}
+  1688→          {tab === 'diffusion' && (
+  1689→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+  1690→              <Card className="bg-zinc-900 border-zinc-800 max-w-2xl">
+  1691→                <CardHeader>
+  1692→                  <CardTitle className="text-white flex items-center gap-2"><Megaphone className="w-5 h-5 text-blue-500" /> Diffuser une notification</CardTitle>
+  1693→                  <CardDescription className="text-zinc-400">Envoyer instantanément à tous les étudiants vérifiés</CardDescription>
+  1694→                </CardHeader>
+  1695→                <CardContent>
+  1696→                  <form onSubmit={sendBroadcast} className="space-y-4">
+  1697→                    <div><Label className="text-zinc-300">Titre</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={broadcastForm.titre} onChange={e => setBroadcastForm({ ...broadcastForm, titre: e.target.value })} required /></div>
+  1698→                    <div><Label className="text-zinc-300">Message</Label><textarea className="mt-1 w-full min-h-[100px] rounded-lg bg-zinc-800 border border-zinc-700 text-white p-3 text-sm resize-none" value={broadcastForm.message} onChange={e => setBroadcastForm({ ...broadcastForm, message: e.target.value })} required /></div>
+  1699→                    <div><Label className="text-zinc-300">Type</Label>
+  1700→                      <Select value={broadcastForm.type} onValueChange={v => setBroadcastForm({ ...broadcastForm, type: v })}>
+  1701→                        <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1702→                        <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="info">Information</SelectItem><SelectItem value="alerte">Alerte</SelectItem><SelectItem value="note">Note</SelectItem><SelectItem value="paiement">Paiement</SelectItem></SelectContent>
+  1703→                      </Select>
+  1704→                    </div>
+  1705→                    {broadcastMsg && <p className={`text-sm flex items-center gap-1 ${broadcastMsg.includes('envoyée') ? 'text-green-400' : 'text-red-400'}`}>{broadcastMsg.includes('envoyée') ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}{broadcastMsg}</p>}
+  1706→                    <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700"><Send className="w-4 h-4 mr-2" />Publier à tous les étudiants</Button>
+  1707→                  </form>
+  1708→                </CardContent>
+  1709→              </Card>
+  1710→            </motion.div>
+  1711→          )}
+  1712→
+  1713→          {/* Paramètres */}
+  1714→          {tab === 'parametres' && (
+  1715→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+  1716→              <Card className="bg-zinc-900 border-zinc-800 max-w-md">
+  1717→                <CardHeader><CardTitle className="text-white">Modifier le mot de passe</CardTitle></CardHeader>
+  1718→                <CardContent>
+  1719→                  <form onSubmit={changePassword} className="space-y-4">
+  1720→                    <div><Label className="text-zinc-300">Email actuel</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={adminEmail} disabled /></div>
+  1721→                    <div><Label className="text-zinc-300">Mot de passe actuel</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" type="password" value={pwForm.current} onChange={e => setPwForm({ ...pwForm, current: e.target.value })} required /></div>
+  1722→                    <div><Label className="text-zinc-300">Nouveau mot de passe</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" type="password" value={pwForm.newPw} onChange={e => setPwForm({ ...pwForm, newPw: e.target.value })} required /></div>
+  1723→                    <div><Label className="text-zinc-300">Confirmer le nouveau mot de passe</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" type="password" value={pwForm.confirm} onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })} required /></div>
+  1724→                    {pwMsg && <p className={`text-sm flex items-center gap-1 ${pwMsg.includes('succès') ? 'text-green-400' : 'text-red-400'}`}>{pwMsg.includes('succès') ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}{pwMsg}</p>}
+  1725→                    <Button type="submit" className="w-full bg-blue-600 text-white hover:bg-blue-700">Modifier le mot de passe</Button>
+  1726→                  </form>
+  1727→                  <div className="mt-6 p-4 bg-zinc-800 rounded-lg">
+  1728→                    <p className="text-zinc-500 text-xs">Identifiants par défaut</p>
+  1729→                    <p className="text-zinc-300 text-sm">Email : <span className="text-blue-400 font-mono">admin@estam.cg</span></p>
+  1730→                  </div>
+  1731→                </CardContent>
+  1732→              </Card>
+  1733→            </motion.div>
+  1734→          )}
+  1735→        </div>
+  1736→      </main>
+  1737→    </div>
+  1738→  )
+  1739→}
+  1740→
+  1741→// ─── Main Home Component ───
+  1742→export default function Home() {
+  1743→  const currentPage = useAppStore(s => s.currentPage)
+  1744→
+  1745→  useEffect(() => {
+  1746→    fetch('/api/init-db').catch(() => {})
+  1747→  }, [])
+  1748→
+  1749→  switch (currentPage) {
+  1750→    case 'landing': return <LandingPage />
+  1751→    case 'register': return <RegisterPage />
+  1752→    case 'verify': return <VerifyPage />
+  1753→    case 'verification-steps': return <VerificationStepsPage />
+  1754→    case 'login': return <LoginPage />
+  1755→    case 'admin-login': return <AdminLoginPage />
+  1756→    case 'mini-register': return <MiniLoading targetPage='register' />
+  1757→    case 'mini-login': return <MiniLoading targetPage='login' />
+  1758→    case 'mini-admin-login': return <MiniLoading targetPage='admin-login' />
+  1759→    case 'loading': return <LoadingPage targetPage="student-dashboard" />
+  1760→    case 'admin-loading': return <LoadingPage targetPage="admin-dashboard" />
+  1761→    case 'student-dashboard': return <StudentDashboard />
+  1762→    case 'admin-dashboard': return <AdminDashboard />
+  1763→    default: return <LandingPage />
+  1764→  }
+  1765→}
+  1766→
