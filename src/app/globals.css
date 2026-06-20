@@ -160,3 +160,102 @@ html {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ─── Floating particles background ─── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+  25% { transform: translateY(-30px) rotate(90deg); opacity: 0.6; }
+  50% { transform: translateY(-15px) rotate(180deg); opacity: 0.4; }
+  75% { transform: translateY(-40px) rotate(270deg); opacity: 0.5; }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.2; }
+  33% { transform: translateY(-50px) translateX(15px); opacity: 0.5; }
+  66% { transform: translateY(-20px) translateX(-10px); opacity: 0.3; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(37, 99, 235, 0.3); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 2s infinite; }
+.animate-float-slow { animation: float2 10s ease-in-out 1s infinite; }
+.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+.animate-gradient { animation: gradient-shift 4s ease infinite; background-size: 200% 200%; }
+.animate-count { animation: count-up 0.6s ease-out both; }
+
+/* ─── Glassmorphism card ─── */
+.glass {
+  background: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(63, 63, 70, 0.5);
+}
+
+.glass-strong {
+  background: rgba(24, 24, 27, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(63, 63, 70, 0.6);
+}
+
+/* ─── Hover card glow ─── */
+.card-glow {
+  transition: all 0.3s ease;
+}
+.card-glow:hover {
+  box-shadow: 0 0 30px rgba(37, 99, 235, 0.15), 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ─── Gradient text ─── */
+.gradient-text {
+  background: linear-gradient(135deg, #2563eb, #60a5fa, #93c5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─── Animated border gradient ─── */
+.border-gradient {
+  position: relative;
+  border: none;
+}
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.5), rgba(96, 165, 250, 0.2), rgba(37, 99, 235, 0.5));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ─── Status indicator pulse ─── */
+.status-pulse {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ─── Selection color ─── */
+::selection {
+  background: rgba(37, 99, 235, 0.4);
+  color: white;
+}

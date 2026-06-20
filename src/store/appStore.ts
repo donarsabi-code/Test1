@@ -10,7 +10,10 @@ export type Page =
   | 'loading'
   | 'admin-loading'
   | 'student-dashboard'
-  | 'admin-dashboard';
+  | 'admin-dashboard'
+  | 'mini-register'
+  | 'mini-login'
+  | 'mini-admin-login';
 
 export interface Student {
   id: string;
@@ -66,10 +69,10 @@ export interface Notification {
   createdAt: string;
 }
 
-// ─── Persisted keys (survive page refresh) ───
+// ─── Persist all state to localStorage ───
 const PERSIST_KEY = 'estam_app_state';
 
-function loadPersistedState() {
+function loadPersistedState(): Record<string, unknown> | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(PERSIST_KEY);
@@ -93,27 +96,22 @@ function clearPersistedState() {
 }
 
 interface AppStore {
-  // Navigation
   currentPage: Page;
   setPage: (page: Page) => void;
 
-  // Auth - Student
   student: Student | null;
   setStudent: (s: Student | null) => void;
 
-  // Auth - Admin
   isAdmin: boolean;
   setAdmin: (v: boolean) => void;
   adminEmail: string;
   setAdminEmail: (e: string) => void;
 
-  // Registration
   registeredEmail: string;
   registeredStudentId: string;
   registeredCode: string;
   setRegistration: (email: string, studentId: string, code: string) => void;
 
-  // Student data
   grades: Grade[];
   setGrades: (g: Grade[]) => void;
   payments: Payment[];
@@ -121,15 +119,12 @@ interface AppStore {
   notifications: Notification[];
   setNotifications: (n: Notification[]) => void;
 
-  // Admin selected student
   selectedStudent: Record<string, unknown> | null;
   setSelectedStudent: (s: Record<string, unknown> | null) => void;
 
-  // Notification reply
   notificationReplies: Record<string, string>;
   setNotificationReply: (notifId: string, reply: string) => void;
 
-  // Session restore
   hydrated: boolean;
   hydrate: () => void;
   logout: () => void;
@@ -139,18 +134,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   currentPage: 'landing',
   setPage: (page) => {
     set({ currentPage: page });
-    // Persist page only for dashboard pages (skip loading/transitions)
-    if (page === 'student-dashboard' || page === 'admin-dashboard') {
-      savePersistedState({ currentPage: page });
-    }
+    // Persist EVERY page change so refresh never loses position
+    savePersistedState({ currentPage: page });
   },
 
   student: null,
   setStudent: (s) => {
     set({ student: s });
-    if (s) {
-      savePersistedState({ student: s });
-    }
+    savePersistedState({ student: s });
   },
 
   isAdmin: false,
@@ -167,7 +158,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   registeredEmail: '',
   registeredStudentId: '',
   registeredCode: '',
-  setRegistration: (email, studentId, code) => set({ registeredEmail: email, registeredStudentId: studentId, registeredCode: code }),
+  setRegistration: (email, studentId, code) => {
+    set({ registeredEmail: email, registeredStudentId: studentId, registeredCode: code });
+    savePersistedState({ registeredEmail: email, registeredStudentId: studentId, registeredCode: code });
+  },
 
   grades: [],
   setGrades: (g) => set({ grades: g }),
@@ -192,30 +186,48 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
-    const student = persisted.student || null;
-    const isAdmin = persisted.isAdmin || false;
-    const adminEmail = persisted.adminEmail || '';
-    const currentPage = persisted.currentPage || 'landing';
+    const restoredState: Record<string, unknown> = { hydrated: true };
 
-    // Only restore to dashboard if there's a valid session
-    if (student && (currentPage === 'student-dashboard')) {
-      set({
-        student,
-        currentPage: 'student-dashboard',
-        hydrated: true,
-      });
-    } else if (isAdmin && adminEmail && currentPage === 'admin-dashboard') {
-      set({
-        isAdmin: true,
-        adminEmail,
-        currentPage: 'admin-dashboard',
-        hydrated: true,
-      });
-    } else {
-      // Session expired or invalid, clear and go to landing
-      clearPersistedState();
-      set({ hydrated: true });
+    // Restore page — for loading pages, convert back to target
+    const currentPage = persisted.currentPage as Page | undefined;
+    if (currentPage) {
+      // Skip loading/transition pages on restore — go directly to target
+      if (currentPage === 'loading') restoredState.currentPage = 'student-dashboard';
+      else if (currentPage === 'admin-loading') restoredState.currentPage = 'admin-dashboard';
+      else if (currentPage === 'mini-register') restoredState.currentPage = 'register';
+      else if (currentPage === 'mini-login') restoredState.currentPage = 'login';
+      else if (currentPage === 'mini-admin-login') restoredState.currentPage = 'admin-login';
+      else restoredState.currentPage = currentPage;
     }
+
+    // Restore student session if available
+    if (persisted.student) {
+      restoredState.student = persisted.student;
+      // If we restored a dashboard page but no student, go to landing
+      if (currentPage === 'student-dashboard' || currentPage === 'loading') {
+        restoredState.currentPage = 'student-dashboard';
+      }
+    } else if ((currentPage === 'student-dashboard' || currentPage === 'loading') && !persisted.student) {
+      restoredState.currentPage = 'landing';
+    }
+
+    // Restore admin session if available
+    if (persisted.isAdmin && persisted.adminEmail) {
+      restoredState.isAdmin = true;
+      restoredState.adminEmail = persisted.adminEmail;
+      if (currentPage === 'admin-dashboard' || currentPage === 'admin-loading') {
+        restoredState.currentPage = 'admin-dashboard';
+      }
+    } else if ((currentPage === 'admin-dashboard' || currentPage === 'admin-loading') && !persisted.isAdmin) {
+      restoredState.currentPage = 'landing';
+    }
+
+    // Restore registration data
+    if (persisted.registeredEmail) restoredState.registeredEmail = persisted.registeredEmail;
+    if (persisted.registeredStudentId) restoredState.registeredStudentId = persisted.registeredStudentId;
+    if (persisted.registeredCode) restoredState.registeredCode = persisted.registeredCode;
+
+    set(restoredState);
   },
 
   logout: () => {
@@ -230,6 +242,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       currentPage: 'landing',
       selectedStudent: null,
       notificationReplies: {},
+      registeredEmail: '',
+      registeredStudentId: '',
+      registeredCode: '',
     });
   },
 }));

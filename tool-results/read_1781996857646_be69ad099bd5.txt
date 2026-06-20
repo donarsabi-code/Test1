@@ -1,0 +1,502 @@
+  1156→          {/* Profil Tab */}
+  1157→          {tab === 'profil' && (
+  1158→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+  1159→              <Card className="bg-zinc-900 border-zinc-800">
+  1160→                <CardHeader>
+  1161→                  <div className="flex items-center justify-between">
+  1162→                    <div className="flex items-center gap-4">
+  1163→                      <div className="w-16 h-16 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 text-2xl font-bold">
+  1164→                        {student.firstName[0]}{student.lastName[0]}
+  1165→                      </div>
+  1166→                      <div>
+  1167→                        <CardTitle className="text-white">{student.firstName} {student.lastName}</CardTitle>
+  1168→                        <CardDescription className="text-blue-400 font-mono">{student.studentId}</CardDescription>
+  1169→                      </div>
+  1170→                    </div>
+  1171→                    {!editing ? (
+  1172→                      <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-400 text-xs" onClick={startEdit}><Edit3 className="w-3 h-3 mr-1" />Modifier</Button>
+  1173→                    ) : (
+  1174→                      <div className="flex gap-2">
+  1175→                        <Button size="sm" className="bg-blue-600 text-white hover:bg-blue-700 text-xs" onClick={saveProfile}><Save className="w-3 h-3 mr-1" />Enregistrer</Button>
+  1176→                        <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-400 text-xs" onClick={() => { setEditing(false); setSaveMsg('') }}>Annuler</Button>
+  1177→                      </div>
+  1178→                    )}
+  1179→                  </div>
+  1180→                </CardHeader>
+  1181→                <CardContent className="space-y-4">
+  1182→                  {saveMsg && <p className={`text-sm flex items-center gap-1 ${saveMsg.includes('succès') ? 'text-green-400' : 'text-red-400'}`}>{saveMsg.includes('succès') ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}{saveMsg}</p>}
+  1183→                  {!editing ? (
+  1184→                    <div className="grid sm:grid-cols-2 gap-4">
+  1185→                      {[
+  1186→                        { label: 'Email', value: student.email, icon: Mail },
+  1187→                        { label: 'Téléphone', value: student.phone || '-', icon: Phone },
+  1188→                        { label: 'Ville', value: student.city || '-', icon: MapPin },
+  1189→                        { label: 'Filière', value: student.filiere, icon: BookOpen },
+  1190→                        { label: 'Niveau', value: student.niveau, icon: GraduationCap },
+  1191→                        { label: 'Année', value: student.anneeScolaire, icon: Calendar },
+  1192→                      ].map(item => (
+  1193→                        <div key={item.label} className="bg-zinc-800 rounded-lg p-3 flex items-center gap-3">
+  1194→                          <item.icon className="w-4 h-4 text-blue-400 flex-shrink-0" />
+  1195→                          <div><p className="text-zinc-500 text-xs">{item.label}</p><p className="text-white text-sm">{item.value}</p></div>
+  1196→                        </div>
+  1197→                      ))}
+  1198→                    </div>
+  1199→                  ) : (
+  1200→                    <div className="grid sm:grid-cols-2 gap-4">
+  1201→                      <div><Label className="text-zinc-300">Prénom</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} /></div>
+  1202→                      <div><Label className="text-zinc-300">Nom</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} /></div>
+  1203→                      <div><Label className="text-zinc-300">Téléphone</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} /></div>
+  1204→                      <div><Label className="text-zinc-300">Date de naissance</Label><Input type="date" className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.dateOfBirth} onChange={e => setEditForm({ ...editForm, dateOfBirth: e.target.value })} /></div>
+  1205→                      <div><Label className="text-zinc-300">Genre</Label>
+  1206→                        <Select value={editForm.genre} onValueChange={v => setEditForm({ ...editForm, genre: v })}>
+  1207→                          <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1208→                          <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
+  1209→                        </Select>
+  1210→                      </div>
+  1211→                      <div><Label className="text-zinc-300">Ville</Label>
+  1212→                        <Select value={editForm.city} onValueChange={v => setEditForm({ ...editForm, city: v })}>
+  1213→                          <SelectTrigger className="mt-1 bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1214→                          <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Brazzaville">Brazzaville</SelectItem><SelectItem value="Pointe-Noire">Pointe-Noire</SelectItem></SelectContent>
+  1215→                        </Select>
+  1216→                      </div>
+  1217→                      <div className="sm:col-span-2"><Label className="text-zinc-300">Adresse</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} /></div>
+  1218→                      <div><Label className="text-zinc-300">Nationalité</Label><Input className="mt-1 bg-zinc-800 border-zinc-700 text-white" value={editForm.nationality} onChange={e => setEditForm({ ...editForm, nationality: e.target.value })} /></div>
+  1219→                    </div>
+  1220→                  )}
+  1221→                </CardContent>
+  1222→              </Card>
+  1223→            </motion.div>
+  1224→          )}
+  1225→        </div>
+  1226→      </main>
+  1227→    </div>
+  1228→  )
+  1229→}
+  1230→
+  1231→// ─── Admin Dashboard ───
+  1232→function AdminDashboard() {
+  1233→  const { adminEmail, setPage, setAdmin } = useAppStore()
+  1234→  const [tab, setTab] = useState('dashboard')
+  1235→  const [sidebarOpen, setSidebarOpen] = useState(false)
+  1236→  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  1237→  const [selectedFiliere, setSelectedFiliere] = useState<string | null>(null)
+  1238→  const [searchQuery, setSearchQuery] = useState('')
+  1239→  const [students, setStudents] = useState<Record<string, unknown>[]>([])
+  1240→  const [selectedStudent, setSelectedStudent] = useState<Record<string, unknown> | null>(null)
+  1241→  const [loading, setLoading] = useState(false)
+  1242→  const [gradeForm, setGradeForm] = useState({ matiere: '', type: 'Semestre', note: '', coefficient: '', semestre: 'Semestre 1', anneeScolaire: new Date().getFullYear().toString(), comment: '' })
+  1243→  const [payForm, setPayForm] = useState({ mois: MOIS[0], montant: '35000', datePaiement: '', statut: 'impaye', anneeScolaire: new Date().getFullYear().toString() })
+  1244→  const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' })
+  1245→  const [pwMsg, setPwMsg] = useState('')
+  1246→  const [filiereCounts, setFiliereCounts] = useState<Record<string, number>>({})
+  1247→  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  1248→  const [broadcastForm, setBroadcastForm] = useState({ titre: '', message: '', type: 'info' })
+  1249→  const [broadcastMsg, setBroadcastMsg] = useState('')
+  1250→  const [allStudents, setAllStudents] = useState<Record<string, unknown>[]>([])
+  1251→  const [allSearch, setAllSearch] = useState('')
+  1252→  const [qrDataUrl, setQrDataUrl] = useState('')
+  1253→
+  1254→  const fetchCounts = async () => {
+  1255→    try {
+  1256→      const res = await fetch('/api/admin/counts')
+  1257→      const data = await res.json()
+  1258→      setFiliereCounts(data.counts || {})
+  1259→    } catch {}
+  1260→  }
+  1261→
+  1262→  useEffect(() => { fetchCounts() }, [tab, selectedStudent])
+  1263→
+  1264→  const fetchStudents = async (category?: string, filiere?: string, search?: string) => {
+  1265→    setLoading(true)
+  1266→    const params = new URLSearchParams()
+  1267→    if (category) params.set('category', category)
+  1268→    if (filiere) params.set('filiere', filiere)
+  1269→    if (search) params.set('search', search)
+  1270→    try {
+  1271→      const res = await fetch(`/api/admin/students?${params.toString()}`)
+  1272→      const data = await res.json()
+  1273→      setStudents(data.students || [])
+  1274→    } catch { setStudents([]) }
+  1275→    finally { setLoading(false) }
+  1276→  }
+  1277→
+  1278→  useEffect(() => {
+  1279→    if (selectedCategory && selectedFiliere) fetchStudents(selectedCategory, selectedFiliere, searchQuery)
+  1280→  }, [selectedCategory, selectedFiliere, searchQuery])
+  1281→
+  1282→  const fetchAllStudents = async (search?: string) => {
+  1283→    setLoading(true)
+  1284→    const params = new URLSearchParams()
+  1285→    if (search) params.set('search', search)
+  1286→    try {
+  1287→      const res = await fetch(`/api/admin/students?${params.toString()}`)
+  1288→      const data = await res.json()
+  1289→      setAllStudents(data.students || [])
+  1290→    } catch { setAllStudents([]) }
+  1291→    finally { setLoading(false) }
+  1292→  }
+  1293→
+  1294→  useEffect(() => {
+  1295→    if (tab === 'classe') fetchAllStudents(allSearch)
+  1296→  }, [tab, allSearch])
+  1297→
+  1298→  const logout = useAppStore(s => s.logout)
+  1299→  const handleLogout = () => { logout() }
+  1300→
+  1301→  const deleteStudents = async (ids: string[]) => {
+  1302→    if (!confirm(`Supprimer ${ids.length} étudiant(s) ?`)) return
+  1303→    try {
+  1304→      await fetch(`/api/admin/students?ids=${ids.join(',')}`, { method: 'DELETE' })
+  1305→      setSelectedIds([])
+  1306→      fetchStudents(selectedCategory || undefined, selectedFiliere || undefined, searchQuery)
+  1307→      fetchAllStudents(allSearch)
+  1308→      fetchCounts()
+  1309→    } catch {}
+  1310→  }
+  1311→
+  1312→  const sendBroadcast = async (e: FormEvent) => {
+  1313→    e.preventDefault()
+  1314→    if (!broadcastForm.titre || !broadcastForm.message) return
+  1315→    try {
+  1316→      const res = await fetch('/api/notifications/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(broadcastForm) })
+  1317→      const data = await res.json()
+  1318→      setBroadcastMsg(data.success ? `Notification envoyée à ${data.sent} étudiant(s)` : 'Erreur')
+  1319→      setBroadcastForm({ titre: '', message: '', type: 'info' })
+  1320→    } catch { setBroadcastMsg('Erreur serveur') }
+  1321→  }
+  1322→
+  1323→  const toggleSelect = (id: string) => {
+  1324→    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  1325→  }
+  1326→
+  1327→  const toggleSelectAll = () => {
+  1328→    const allIds = students.map(s => (s as Record<string, string>).id)
+  1329→    setSelectedIds(prev => prev.length === allIds.length ? [] : allIds)
+  1330→  }
+  1331→
+  1332→  const openStudent = async (studentId: string) => {
+  1333→    try {
+  1334→      const res = await fetch(`/api/students/by-studentid?studentId=${studentId}`)
+  1335→      const data = await res.json()
+  1336→      if (data.student) {
+  1337→        const s = data.student as Record<string, unknown>
+  1338→        setSelectedStudent(s)
+  1339→        setTab('student-detail')
+  1340→        // Generate QR code
+  1341→        const qrInfo = JSON.stringify({
+  1342→          id: s.studentId, nom: `${s.firstName} ${s.lastName}`,
+  1343→          email: s.email, filiere: s.filiere, niveau: s.niveau,
+  1344→          ville: s.city
+  1345→        })
+  1346→        QRCode.toDataURL(qrInfo, { width: 200, margin: 2, color: { dark: '#2563eb', light: '#18181b' } }).then(setQrDataUrl).catch(() => {})
+  1347→      }
+  1348→    } catch { }
+  1349→  }
+  1350→
+  1351→  const addGrade = async (e: FormEvent) => {
+  1352→    e.preventDefault()
+  1353→    if (!selectedStudent) return
+  1354→    try {
+  1355→      await fetch('/api/grades', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...gradeForm, studentId: (selectedStudent as Record<string, string>).id, coefficient: gradeForm.coefficient ? parseFloat(gradeForm.coefficient) : null }) })
+  1356→      const res = await fetch(`/api/students/${(selectedStudent as Record<string, string>).id}`)
+  1357→      const data = await res.json()
+  1358→      setSelectedStudent(data.student)
+  1359→      setGradeForm({ matiere: '', type: 'Semestre', note: '', coefficient: '', semestre: 'Semestre 1', anneeScolaire: new Date().getFullYear().toString(), comment: '' })
+  1360→    } catch { }
+  1361→  }
+  1362→
+  1363→  const addPayment = async (e: FormEvent) => {
+  1364→    e.preventDefault()
+  1365→    if (!selectedStudent) return
+  1366→    try {
+  1367→      await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payForm, studentId: (selectedStudent as Record<string, string>).id }) })
+  1368→      const res = await fetch(`/api/students/${(selectedStudent as Record<string, string>).id}`)
+  1369→      const data = await res.json()
+  1370→      setSelectedStudent(data.student)
+  1371→    } catch { }
+  1372→  }
+  1373→
+  1374→  const changePassword = async (e: FormEvent) => {
+  1375→    e.preventDefault()
+  1376→    setPwMsg('')
+  1377→    if (pwForm.newPw !== pwForm.confirm) { setPwMsg('Les mots de passe ne correspondent pas'); return }
+  1378→    try {
+  1379→      const res = await fetch('/api/admin/password', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.newPw }) })
+  1380→      const data = await res.json()
+  1381→      setPwMsg(data.success ? 'Mot de passe modifié avec succès !' : data.error)
+  1382→      if (data.success) setPwForm({ current: '', newPw: '', confirm: '' })
+  1383→    } catch { setPwMsg('Erreur serveur') }
+  1384→  }
+  1385→
+  1386→  const adminMenu = [
+  1387→    { id: 'dashboard', icon: BarChart3, label: 'Tableau de bord' },
+  1388→    { id: 'classe', icon: UsersRound, label: 'Classe Étudiant' },
+  1389→    { id: 'gestion', icon: Users, label: 'Gestion' },
+  1390→    { id: 'technologie', icon: Settings, label: 'Technologie' },
+  1391→    { id: 'diffusion', icon: Megaphone, label: 'Diffusion' },
+  1392→    { id: 'parametres', icon: Settings, label: 'Paramètres' },
+  1393→  ]
+  1394→
+  1395→  return (
+  1396→    <div className="min-h-screen bg-black flex">
+  1397→      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+  1398→      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+  1399→        <div className="p-4 border-b border-zinc-800">
+  1400→          <button onClick={() => setPage('admin-dashboard')} className="flex items-center gap-3 hover:opacity-80 transition">
+  1401→            <img src={LOGO} alt="ESTAM" className="w-10 h-10 rounded-lg object-contain" />
+  1402→            <div>
+  1403→              <p className="text-blue-500 font-bold text-sm">ESTAM Admin</p>
+  1404→              <p className="text-zinc-500 text-xs">{adminEmail}</p>
+  1405→            </div>
+  1406→          </button>
+  1407→          <button className="ml-auto lg:hidden absolute right-4 top-4 text-zinc-400" onClick={() => setSidebarOpen(false)}><X className="w-5 h-5" /></button>
+  1408→        </div>
+  1409→        <nav className="flex-1 p-3 space-y-1">
+  1410→          {adminMenu.map(item => (
+  1411→            <button key={item.id} onClick={() => { setTab(item.id); setSidebarOpen(false); setSelectedStudent(null); setSelectedFiliere(null) }}
+  1412→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${tab === item.id ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}`}>
+  1413→              <item.icon className="w-5 h-5" />{item.label}
+  1414→            </button>
+  1415→          ))}
+  1416→        </nav>
+  1417→        <div className="p-3 border-t border-zinc-800">
+  1418→          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition">
+  1419→            <LogOut className="w-5 h-5" />Déconnexion
+  1420→          </button>
+  1421→        </div>
+  1422→      </aside>
+  1423→
+  1424→      <main className="flex-1 min-h-screen">
+  1425→        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-zinc-800 px-4 sm:px-6 h-14 flex items-center gap-4">
+  1426→          <button className="lg:hidden text-zinc-400" onClick={() => setSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
+  1427→          <h2 className="text-white font-semibold text-sm sm:text-base">
+  1428→            {tab === 'student-detail' && selectedStudent ? (
+  1429→              <button onClick={() => { setTab(selectedCategory === 'Gestion' ? 'gestion' : selectedCategory === 'Technologie' ? 'technologie' : 'classe'); setSelectedStudent(null) }} className="flex items-center gap-2 text-zinc-400 hover:text-white">
+  1430→                <ArrowLeft className="w-4 h-4" />{(selectedStudent as Record<string, string>).studentId}
+  1431→              </button>
+  1432→            ) : adminMenu.find(m => m.id === tab)?.label}
+  1433→          </h2>
+  1434→        </header>
+  1435→
+  1436→        <div className="p-4 sm:p-6 max-w-7xl">
+  1437→          {/* Admin Dashboard */}
+  1438→          {tab === 'dashboard' && (
+  1439→            <div className="space-y-6">
+  1440→              <Card className="bg-zinc-900 border-zinc-800">
+  1441→                <CardContent className="pt-6">
+  1442→                  <h3 className="text-white text-lg font-semibold mb-4">Vue d&apos;ensemble</h3>
+  1443→                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+  1444→                    <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-blue-500">{Object.values(filiereCounts).reduce((a, b) => a + b, 0) || 0}</p><p className="text-zinc-400 text-xs">Total étudiants</p></div>
+  1445→                    <div className="bg-zinc-800 rounded-lg p-4 text-center"><Users className="w-6 h-6 text-blue-400 mx-auto mb-1" /><p className="text-zinc-400 text-xs">Gestion</p></div>
+  1446→                    <div className="bg-zinc-800 rounded-lg p-4 text-center"><Settings className="w-6 h-6 text-blue-400 mx-auto mb-1" /><p className="text-zinc-400 text-xs">Technologie</p></div>
+  1447→                    <div className="bg-zinc-800 rounded-lg p-4 text-center"><Bell className="w-6 h-6 text-blue-400 mx-auto mb-1" /><p className="text-zinc-400 text-xs">Activité</p></div>
+  1448→                  </div>
+  1449→                </CardContent>
+  1450→              </Card>
+  1451→            </div>
+  1452→          )}
+  1453→
+  1454→          {/* Classe Étudiant - ALL students */}
+  1455→          {tab === 'classe' && !selectedStudent && (
+  1456→            <div className="space-y-4">
+  1457→              <h3 className="text-white font-semibold text-lg">Tous les étudiants inscrits</h3>
+  1458→              <div className="relative">
+  1459→                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+  1460→                <Input className="pl-10 bg-zinc-900 border-zinc-800 text-white" placeholder="Rechercher par nom, prénom ou identifiant (EST...)" value={allSearch} onChange={e => setAllSearch(e.target.value)} />
+  1461→              </div>
+  1462→              {loading ? <div className="text-center py-12"><Loader2 className="w-8 h-8 text-blue-500 mx-auto animate-spin" /></div> : allStudents.length === 0 ? (
+  1463→                <p className="text-zinc-500 text-sm text-center py-12">Aucun étudiant trouvé</p>
+  1464→              ) : (
+  1465→                <div className="space-y-2">
+  1466→                  <p className="text-zinc-500 text-xs">{allStudents.length} étudiant(s) trouvé(s)</p>
+  1467→                  {allStudents.map(s => {
+  1468→                    const st = s as Record<string, string>
+  1469→                    return (
+  1470→                      <Card key={st.id} className="bg-zinc-900 border-zinc-800 cursor-pointer hover:border-blue-500/50 transition" onClick={() => openStudent(st.studentId)}>
+  1471→                        <CardContent className="py-3 px-4 flex items-center gap-4">
+  1472→                          <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-sm">{(st.firstName || '?')[0]}{(st.lastName || '?')[0]}</div>
+  1473→                          <div className="flex-1 min-w-0">
+  1474→                            <p className="text-white text-sm font-medium">{st.firstName} {st.lastName}</p>
+  1475→                            <p className="text-zinc-500 text-xs font-mono">{st.studentId} · {st.filiere || '-'} · {st.niveau || '-'}</p>
+  1476→                          </div>
+  1477→                          <Badge variant="outline" className="border-zinc-700 text-zinc-400 text-xs hidden sm:block">{st.filiereCategory || '-'}</Badge>
+  1478→                          <Badge variant="outline" className={st.verified === 'true' ? 'border-green-500/30 text-green-400 text-xs' : 'border-zinc-700 text-zinc-500 text-xs'}>{st.verified === 'true' ? 'Vérifié' : 'Non vérifié'}</Badge>
+  1479→                          <button onClick={(e) => { e.stopPropagation(); deleteStudents([st.id]) }} className="text-zinc-600 hover:text-red-400 transition p-1"><Trash2 className="w-4 h-4" /></button>
+  1480→                          <ChevronRight className="w-5 h-5 text-zinc-600" />
+  1481→                        </CardContent>
+  1482→                      </Card>
+  1483→                    )
+  1484→                  })}
+  1485→                </div>
+  1486→              )}
+  1487→            </div>
+  1488→          )}
+  1489→
+  1490→          {/* Gestion / Technologie Tab */}
+  1491→          {(tab === 'gestion' || tab === 'technologie') && !selectedStudent && (
+  1492→            <div className="space-y-6">
+  1493→              {!selectedFiliere ? (
+  1494→                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+  1495→                  <h3 className="text-white font-semibold mb-4">Sélectionnez une filière en {tab === 'gestion' ? 'Gestion' : 'Technologie'}</h3>
+  1496→                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1497→                    {FILIERES[tab === 'gestion' ? 'Gestion' : 'Technologie'].map((f, i) => {
+  1498→                      const cat = tab === 'gestion' ? 'Gestion' : 'Technologie'
+  1499→                      const countKey = `${cat}|||${f}`
+  1500→                      const count = filiereCounts[countKey] || 0
+  1501→                      return (
+  1502→                      <Card key={f} className="bg-zinc-900 border-zinc-800 cursor-pointer hover:border-blue-500/50 transition" onClick={() => { setSelectedCategory(cat); setSelectedFiliere(f); setSearchQuery(''); setSelectedIds([]) }}>
+  1503→                        <CardContent className="pt-4 flex items-center gap-3">
+  1504→                          <div className="w-10 h-10 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-400 font-bold">{i + 1}</div>
+  1505→                          <div className="flex-1 min-w-0">
+  1506→                            <p className="text-white text-sm font-medium truncate">{f}</p>
+  1507→                            <p className="text-zinc-500 text-xs">{count} étudiant{count > 1 ? 's' : ''} inscrit{count > 1 ? 's' : ''}</p>
+  1508→                          </div>
+  1509→                          <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-sm">{count}</div>
+  1510→                          <ChevronRight className="w-5 h-5 text-zinc-600" />
+  1511→                        </CardContent>
+  1512→                      </Card>
+  1513→                      )
+  1514→                    })}
+  1515→                  </div>
+  1516→                </motion.div>
+  1517→              ) : (
+  1518→                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+  1519→                  <button onClick={() => { setSelectedFiliere(null); setStudents([]) }} className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm"><ArrowLeft className="w-4 h-4" />Retour aux filières</button>
+  1520→                  <h3 className="text-white font-semibold">{selectedFiliere}</h3>
+  1521→                  <div className="relative">
+  1522→                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+  1523→                    <Input className="pl-10 bg-zinc-900 border-zinc-800 text-white" placeholder="Rechercher par nom ou identifiant (EST...)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+  1524→                  </div>
+  1525→                  {loading ? <p className="text-zinc-500 text-sm">Chargement...</p> : students.length === 0 ? (
+  1526→                    <p className="text-zinc-500 text-sm text-center py-12">Aucun étudiant trouvé dans cette filière</p>
+  1527→                  ) : (
+  1528→                    <>
+  1529→                    <div className="flex items-center gap-3 mb-2">
+  1530→                      <button onClick={toggleSelectAll} className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition ${selectedIds.length === students.length && students.length > 0 ? 'bg-blue-600 border-blue-600' : 'border-zinc-600 hover:border-zinc-400'}`}>
+  1531→                        {selectedIds.length === students.length && students.length > 0 && <Check className="w-3 h-3 text-white" />}
+  1532→                      </button>
+  1533→                      <span className="text-zinc-400 text-xs">Tout sélectionner</span>
+  1534→                      {selectedIds.length > 0 && (
+  1535→                        <>
+  1536→                          <span className="text-zinc-500 text-xs">({selectedIds.length} sélectionné{selectedIds.length > 1 ? 's' : ''})</span>
+  1537→                          <Button variant="destructive" size="sm" className="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs h-8 ml-auto" onClick={() => deleteStudents(selectedIds)}><Trash2 className="w-3 h-3 mr-1" />Supprimer</Button>
+  1538→                        </>
+  1539→                      )}
+  1540→                    </div>
+  1541→                    <div className="space-y-2">
+  1542→                      {students.map(s => {
+  1543→                        const st = s as Record<string, string>
+  1544→                        const isSelected = selectedIds.includes(st.id)
+  1545→                        return (
+  1546→                          <Card key={st.id} className={`bg-zinc-900 border-zinc-800 cursor-pointer hover:border-blue-500/50 transition ${isSelected ? 'border-blue-500/50 bg-blue-600/5' : ''}`} onClick={() => openStudent(st.studentId)}>
+  1547→                            <CardContent className="py-3 px-4 flex items-center gap-4">
+  1548→                              <button onClick={(e) => { e.stopPropagation(); toggleSelect(st.id) }} className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-zinc-600 hover:border-zinc-400'}`}>
+  1549→                                {isSelected && <Check className="w-3 h-3 text-white" />}
+  1550→                              </button>
+  1551→                              <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-sm">{(st.firstName || '?')[0]}{(st.lastName || '?')[0]}</div>
+  1552→                              <div className="flex-1 min-w-0">
+  1553→                                <p className="text-white text-sm font-medium">{st.firstName} {st.lastName}</p>
+  1554→                                <p className="text-zinc-500 text-xs font-mono">{st.studentId} · {st.niveau}</p>
+  1555→                              </div>
+  1556→                              <Badge variant="outline" className={st.verified === 'true' ? 'border-green-500/30 text-green-400' : 'border-zinc-700 text-zinc-500'}>{st.verified === 'true' ? 'Vérifié' : 'Non vérifié'}</Badge>
+  1557→                              <button onClick={(e) => { e.stopPropagation(); deleteStudents([st.id]) }} className="text-zinc-600 hover:text-red-400 transition p-1"><Trash2 className="w-4 h-4" /></button>
+  1558→                              <ChevronRight className="w-5 h-5 text-zinc-600" />
+  1559→                            </CardContent>
+  1560→                          </Card>
+  1561→                        )
+  1562→                      })}
+  1563→                    </div>
+  1564→                    </>
+  1565→                  )}
+  1566→                </motion.div>
+  1567→              )}
+  1568→            </div>
+  1569→          )}
+  1570→
+  1571→          {/* Student Detail */}
+  1572→          {tab === 'student-detail' && selectedStudent && (() => {
+  1573→            const s = selectedStudent as Record<string, unknown>
+  1574→            const sGrades = (s.grades as Record<string, string>[]) || []
+  1575→            const sPayments = (s.payments as Record<string, string>[]) || []
+  1576→            return (
+  1577→              <div className="space-y-6">
+  1578→                {/* Student Info Header */}
+  1579→                <Card className="bg-zinc-900 border-zinc-800">
+  1580→                  <CardHeader>
+  1581→                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+  1582→                      <div className="w-16 h-16 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 text-2xl font-bold">{String(s.firstName || '?')[0]}{String(s.lastName || '?')[0]}</div>
+  1583→                      <div className="flex-1">
+  1584→                        <CardTitle className="text-white text-xl">{String(s.firstName)} {String(s.lastName)}</CardTitle>
+  1585→                        <CardDescription className="text-blue-400 font-mono">{String(s.studentId)} · {String(s.filiere)} · {String(s.niveau)}</CardDescription>
+  1586→                      </div>
+  1587→                      <div className="flex gap-2">
+  1588→                        <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-400 text-xs" onClick={() => generateStudentPDF(s)}><Download className="w-3 h-3 mr-1" />PDF</Button>
+  1589→                      </div>
+  1590→                    </div>
+  1591→                  </CardHeader>
+  1592→                  <CardContent>
+  1593→                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+  1594→                      {[
+  1595→                        { l: 'Email', v: String(s.email || '-') },
+  1596→                        { l: 'Téléphone', v: String(s.phone || '-') },
+  1597→                        { l: 'Ville', v: String(s.city || '-') },
+  1598→                        { l: 'Statut', v: String(s.status || '-') },
+  1599→                      ].map(i => (
+  1600→                        <div key={i.l} className="bg-zinc-800 rounded p-2"><p className="text-zinc-500 text-xs">{i.l}</p><p className="text-white text-sm">{i.v}</p></div>
+  1601→                      ))}
+  1602→                    </div>
+  1603→                    {/* QR Code */}
+  1604→                    {qrDataUrl && (
+  1605→                      <div className="mt-4 flex flex-col items-center p-4 bg-zinc-800 rounded-xl">
+  1606→                        <p className="text-zinc-400 text-xs mb-2">Code QR - Informations étudiant</p>
+  1607→                        <img src={qrDataUrl} alt="QR Code" className="w-48 h-48 rounded-lg" />
+  1608→                        <p className="text-zinc-600 text-[10px] mt-2">Scannez pour retrouver les informations de l&apos;étudiant</p>
+  1609→                      </div>
+  1610→                    )}
+  1611→                  </CardContent>
+  1612→                </Card>
+  1613→
+  1614→                {/* Existing Grades */}
+  1615→                <Card className="bg-zinc-900 border-zinc-800">
+  1616→                  <CardHeader><CardTitle className="text-white text-base">Notes publiées</CardTitle></CardHeader>
+  1617→                  <CardContent>
+  1618→                    {sGrades.length === 0 ? <p className="text-zinc-500 text-sm">Aucune note</p> : (
+  1619→                      <div className="overflow-x-auto">
+  1620→                        <table className="w-full text-sm">
+  1621→                          <thead><tr className="border-b border-zinc-800"><th className="text-left text-zinc-400 px-3 py-2">Matière</th><th className="text-left text-zinc-400 px-3 py-2">Type</th><th className="text-left text-zinc-400 px-3 py-2">Note</th><th className="text-left text-zinc-400 px-3 py-2">Sem.</th></tr></thead>
+  1622→                          <tbody>{sGrades.map(g => (
+  1623→                            <tr key={g.id} className="border-b border-zinc-800/50"><td className="px-3 py-2 text-white">{g.matiere}</td><td className="px-3 py-2 text-zinc-400">{g.type}</td><td className="px-3 py-2 text-blue-400 font-bold">{g.note}</td><td className="px-3 py-2 text-zinc-400">{g.semestre}</td></tr>
+  1624→                          ))}</tbody>
+  1625→                        </table>
+  1626→                      </div>
+  1627→                    )}
+  1628→                  </CardContent>
+  1629→                </Card>
+  1630→
+  1631→                {/* Add Grade Form */}
+  1632→                <Card className="bg-zinc-900 border-zinc-800">
+  1633→                  <CardHeader><CardTitle className="text-white text-base">Publier une note</CardTitle></CardHeader>
+  1634→                  <CardContent>
+  1635→                    <form onSubmit={addGrade} className="grid sm:grid-cols-3 gap-3">
+  1636→                      <Input className="bg-zinc-800 border-zinc-700 text-white" placeholder="Matière" value={gradeForm.matiere} onChange={e => setGradeForm({ ...gradeForm, matiere: e.target.value })} required />
+  1637→                      <Select value={gradeForm.type} onValueChange={v => setGradeForm({ ...gradeForm, type: v })}>
+  1638→                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1639→                        <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Session">Session</SelectItem><SelectItem value="Devoir">Devoir</SelectItem><SelectItem value="Semestre">Semestre</SelectItem><SelectItem value="Rattrapage">Rattrapage</SelectItem></SelectContent>
+  1640→                      </Select>
+  1641→                      <Input className="bg-zinc-800 border-zinc-700 text-white" placeholder="Note (ex: 14/20)" value={gradeForm.note} onChange={e => setGradeForm({ ...gradeForm, note: e.target.value })} required />
+  1642→                      <Input className="bg-zinc-800 border-zinc-700 text-white" placeholder="Coefficient" value={gradeForm.coefficient} onChange={e => setGradeForm({ ...gradeForm, coefficient: e.target.value })} />
+  1643→                      <Select value={gradeForm.semestre} onValueChange={v => setGradeForm({ ...gradeForm, semestre: v })}>
+  1644→                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+  1645→                        <SelectContent className="bg-zinc-800 border-zinc-700"><SelectItem value="Semestre 1">Semestre 1</SelectItem><SelectItem value="Semestre 2">Semestre 2</SelectItem></SelectContent>
+  1646→                      </Select>
+  1647→                      <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">Publier</Button>
+  1648→                    </form>
+  1649→                  </CardContent>
+  1650→                </Card>
+  1651→
+  1652→                {/* Existing Payments */}
+  1653→                <Card className="bg-zinc-900 border-zinc-800">
+  1654→                  <CardHeader><CardTitle className="text-white text-base">Paiements</CardTitle></CardHeader>
+  1655→                  <CardContent>
+
+[showing lines 1156-1655 of 1817; use offset=1656 with limit to continue reading]

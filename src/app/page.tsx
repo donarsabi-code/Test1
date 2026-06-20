@@ -63,6 +63,40 @@ function Reveal({ children, className = '', delay = 0 }: { children: React.React
   )
 }
 
+function FloatingParticles() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute top-20 left-[10%] w-2 h-2 bg-blue-500/30 rounded-full animate-float" />
+      <div className="absolute top-40 right-[15%] w-3 h-3 bg-blue-400/20 rounded-full animate-float-delayed" />
+      <div className="absolute top-[60%] left-[20%] w-1.5 h-1.5 bg-blue-300/25 rounded-full animate-float-slow" />
+      <div className="absolute top-[30%] right-[30%] w-2 h-2 bg-blue-500/15 rounded-full animate-float" />
+      <div className="absolute bottom-[20%] left-[40%] w-2.5 h-2.5 bg-blue-400/20 rounded-full animate-float-delayed" />
+      <div className="absolute top-[50%] right-[10%] w-1 h-1 bg-blue-300/30 rounded-full animate-float-slow" />
+      <div className="absolute bottom-[40%] right-[25%] w-3 h-3 bg-blue-500/10 rounded-full animate-float" />
+      <div className="absolute top-[15%] left-[50%] w-2 h-2 bg-blue-400/15 rounded-full animate-float-delayed" />
+    </div>
+  )
+}
+
+function AnimatedStat({ value, label, icon: Icon, delay = 0 }: { value: string; label: string; icon: React.ComponentType<{ className?: string }>; delay?: number }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true })
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.5, delay }}
+      className="glass card-glow rounded-xl p-5 text-center relative overflow-hidden"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent pointer-events-none" />
+      <Icon className="w-8 h-8 text-blue-400 mx-auto mb-3 relative z-10" />
+      <p className="text-3xl font-bold gradient-text animate-count relative z-10">{value}</p>
+      <p className="text-zinc-400 text-sm mt-1 relative z-10">{label}</p>
+    </motion.div>
+  )
+}
+
 // ─── Mini Loading (brief transition) ───
 function MiniLoading({ targetPage }: { targetPage: Page }) {
   const setPage = useAppStore(s => s.setPage)
@@ -441,10 +475,11 @@ function LandingPage() {
         <div className="absolute inset-0">
           <img src="/estam/IMG_1623.jpeg" alt="ESTAM Campus" className="w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
+          <FloatingParticles />
         </div>
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <Reveal>
-            <img src={LOGO} alt="ESTAM Logo" className="w-28 h-28 mx-auto rounded-2xl border-4 border-blue-500/30 mb-6 object-contain" />
+            <img src={LOGO} alt="ESTAM Logo" className="w-28 h-28 mx-auto rounded-2xl border-4 border-blue-500/30 mb-6 object-contain animate-pulse-glow" />
           </Reveal>
           <Reveal delay={0.1}>
             <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4">
@@ -459,10 +494,10 @@ function LandingPage() {
           </Reveal>
           <Reveal delay={0.4}>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 text-base px-8 py-6" onClick={() => setPage('mini-register')}>
+              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 text-base px-8 py-6 shadow-lg shadow-blue-600/25 hover:shadow-blue-500/40 transition-all duration-300" onClick={() => setPage('mini-register')}>
                 <GraduationCap className="w-5 h-5 mr-2" /> S&apos;inscrire maintenant
               </Button>
-              <Button size="lg" variant="outline" className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white text-base px-8 py-6" onClick={() => setPage('mini-login')}>
+              <Button size="lg" variant="outline" className="border-blue-500/50 text-blue-400 hover:bg-blue-600/10 hover:border-blue-500 text-base px-8 py-6 transition-all duration-300" onClick={() => setPage('mini-login')}>
                 <LogIn className="w-5 h-5 mr-2" /> Se connecter
               </Button>
             </div>
@@ -490,26 +525,10 @@ function LandingPage() {
                   L&apos;ESTAM a pour mission d&apos;offrir des programmes d&apos;études innovants, une formation professionnelle et personnelle de qualité, axée sur l&apos;excellence, l&apos;innovation et l&apos;inclusion. Elle prépare les étudiants aux défis du monde professionnel à travers des formations en <strong className="text-white">Gestion</strong> et en <strong className="text-white">Technologie</strong>.
                 </p>
                 <div className="grid grid-cols-2 gap-4 pt-4">
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
-                    <BookOpen className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">9+</p>
-                    <p className="text-zinc-400 text-sm">Filières</p>
-                  </div>
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
-                    <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">2</p>
-                    <p className="text-zinc-400 text-sm">Campus</p>
-                  </div>
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
-                    <Award className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">Licence</p>
-                    <p className="text-zinc-400 text-sm">Diplôme</p>
-                  </div>
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
-                    <Building2 className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">CEREC</p>
-                    <p className="text-zinc-400 text-sm">Partenaire</p>
-                  </div>
+                  <AnimatedStat value="9+" label="Filières" icon={BookOpen} delay={0.1} />
+                  <AnimatedStat value="2" label="Campus" icon={Users} delay={0.2} />
+                  <AnimatedStat value="Licence" label="Diplôme" icon={Award} delay={0.3} />
+                  <AnimatedStat value="CEREC" label="Partenaire" icon={Building2} delay={0.4} />
                 </div>
               </div>
             </Reveal>
@@ -548,7 +567,7 @@ function LandingPage() {
                     <motion.div
                       key={f}
                       whileHover={{ scale: 1.03, borderColor: 'rgb(37, 99, 235)' }}
-                      className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 cursor-default transition-all"
+                      className="glass card-glow rounded-xl p-5 cursor-default group"
                     >
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded bg-blue-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -577,7 +596,7 @@ function LandingPage() {
           </Reveal>
           <div className="grid sm:grid-cols-2 gap-6">
             <Reveal delay={0.1}>
-              <Card className="bg-zinc-900 border-zinc-800">
+              <Card className="glass card-glow">
                 <CardHeader>
                   <CardTitle className="text-blue-400 flex items-center gap-2"><FileText className="w-5 h-5" /> Nouvelle inscription</CardTitle>
                 </CardHeader>
@@ -588,7 +607,7 @@ function LandingPage() {
               </Card>
             </Reveal>
             <Reveal delay={0.2}>
-              <Card className="bg-zinc-900 border-zinc-800">
+              <Card className="glass card-glow">
                 <CardHeader>
                   <CardTitle className="text-blue-400 flex items-center gap-2"><Clock className="w-5 h-5" /> Cours du soir</CardTitle>
                 </CardHeader>
@@ -616,7 +635,7 @@ function LandingPage() {
           </Reveal>
           <div className="grid sm:grid-cols-2 gap-6">
             <Reveal delay={0.1}>
-              <Card className="bg-zinc-900 border-zinc-800">
+              <Card className="glass card-glow">
                 <CardHeader>
                   <CardTitle className="text-white text-lg">Brazzaville</CardTitle>
                 </CardHeader>
@@ -628,7 +647,7 @@ function LandingPage() {
               </Card>
             </Reveal>
             <Reveal delay={0.2}>
-              <Card className="bg-zinc-900 border-zinc-800">
+              <Card className="glass card-glow">
                 <CardHeader>
                   <CardTitle className="text-white text-lg">Pointe-Noire</CardTitle>
                 </CardHeader>
@@ -649,7 +668,7 @@ function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800 py-8 px-4">
+      <footer className="border-t border-blue-500/20 py-8 px-4 bg-zinc-950/50">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src={LOGO} alt="ESTAM" className="w-8 h-8 rounded-lg object-cover" />
@@ -1033,7 +1052,7 @@ function StudentDashboard() {
   return (
     <div className="min-h-screen bg-black flex">
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950/95 backdrop-blur-xl border-r border-zinc-800/50 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-4 border-b border-zinc-800">
           <button onClick={() => setPage('student-dashboard')} className="flex items-center gap-3 hover:opacity-80 transition">
             <img src={LOGO} alt="ESTAM" className="w-10 h-10 rounded-lg object-contain" />
@@ -1060,7 +1079,7 @@ function StudentDashboard() {
       </aside>
 
       <main className="flex-1 min-h-screen">
-        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-zinc-800 px-4 sm:px-6 h-14 flex items-center gap-4">
+        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/50 px-4 sm:px-6 h-14 flex items-center gap-4">
           <button className="lg:hidden text-zinc-400" onClick={() => setSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
           <h2 className="text-white font-semibold text-sm sm:text-base">{menuItems.find(m => m.id === tab)?.label}</h2>
           <div className="ml-auto flex items-center gap-3">
@@ -1077,14 +1096,14 @@ function StudentDashboard() {
           {tab === 'dashboard' && (
             <div className="space-y-6">
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card className="glass card-glow">
                   <CardContent className="pt-6">
                     <h3 className="text-white text-lg font-semibold">Bienvenue, {student.firstName} {student.lastName}</h3>
                     <p className="text-zinc-400 text-sm mt-1">{student.filiere} - {student.niveau} | {student.anneeScolaire}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6">
-                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-blue-500">{grades.length}</p><p className="text-zinc-400 text-xs">Notes</p></div>
-                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-green-400">{paidCount}</p><p className="text-zinc-400 text-xs">Payés</p></div>
-                      <div className="bg-zinc-800 rounded-lg p-4 text-center"><p className="text-2xl font-bold text-red-400">{unpaidCount}</p><p className="text-zinc-400 text-xs">Impayés</p></div>
+                      <div className="bg-zinc-800/60 rounded-lg p-4 text-center border border-zinc-700/30"><p className="text-2xl font-bold text-blue-500">{grades.length}</p><p className="text-zinc-400 text-xs">Notes</p></div>
+                      <div className="bg-zinc-800/60 rounded-lg p-4 text-center border border-zinc-700/30"><p className="text-2xl font-bold text-green-400">{paidCount}</p><p className="text-zinc-400 text-xs">Payés</p></div>
+                      <div className="bg-zinc-800/60 rounded-lg p-4 text-center border border-zinc-700/30"><p className="text-2xl font-bold text-red-400">{unpaidCount}</p><p className="text-zinc-400 text-xs">Impayés</p></div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1134,7 +1153,7 @@ function StudentDashboard() {
               ) : (
                 <div className="grid sm:grid-cols-2 gap-4">
                   {payments.map(p => (
-                    <Card key={p.id} className="bg-zinc-900 border-zinc-800">
+                    <Card key={p.id} className="glass card-glow">
                       <CardContent className="pt-4">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-white font-medium">{p.mois}</span>
@@ -1156,7 +1175,7 @@ function StudentDashboard() {
           {/* Profil Tab */}
           {tab === 'profil' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-              <Card className="bg-zinc-900 border-zinc-800">
+              <Card className="glass card-glow">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -1395,7 +1414,7 @@ function AdminDashboard() {
   return (
     <div className="min-h-screen bg-black flex">
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-950/95 backdrop-blur-xl border-r border-zinc-800/50 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-4 border-b border-zinc-800">
           <button onClick={() => setPage('admin-dashboard')} className="flex items-center gap-3 hover:opacity-80 transition">
             <img src={LOGO} alt="ESTAM" className="w-10 h-10 rounded-lg object-contain" />
@@ -1422,7 +1441,7 @@ function AdminDashboard() {
       </aside>
 
       <main className="flex-1 min-h-screen">
-        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-zinc-800 px-4 sm:px-6 h-14 flex items-center gap-4">
+        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/50 px-4 sm:px-6 h-14 flex items-center gap-4">
           <button className="lg:hidden text-zinc-400" onClick={() => setSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
           <h2 className="text-white font-semibold text-sm sm:text-base">
             {tab === 'student-detail' && selectedStudent ? (
